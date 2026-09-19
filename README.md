@@ -19,6 +19,18 @@ Configurar con Wrangler Secrets:
 
 Nunca guardar secretos en Git.
 
+## CORS
+
+CORS utiliza una allowlist explícita mediante `ALLOWED_ORIGINS`. El valor es una lista separada por comas de orígenes completos, por ejemplo `https://traslachuleta.com,https://www.traslachuleta.com`.
+
+- No se utiliza `Access-Control-Allow-Origin: *`.
+- La coincidencia del `Origin` es exacta.
+- Si `ALLOWED_ORIGINS` está vacío, no se habilita CORS cross-origin.
+- Las respuestas `OPTIONS` y las respuestas de error aplican la misma política.
+- `Vary: Origin` se incluye cuando la solicitud contiene `Origin`.
+
+El valor de producción debe configurarse en Cloudflare como variable de entorno del Worker; no debe sustituirse por una lista fija dentro del código.
+
 ## Desarrollo
 
 ```bash

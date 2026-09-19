@@ -10,19 +10,19 @@ export async function router(request, env) {
   const path = normalizePath(url.pathname);
 
   if (request.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: corsHeaders() });
+    return new Response(null, { status: 204, headers: corsHeaders(request, env) });
   }
 
   if (request.method === "GET" && path === "/health") {
-    return withCors(health(env));
+    return withCors(health(env), request, env);
   }
 
   if (request.method === "GET" && path === "/api/auth/me") {
-    return withCors(await me(request, env));
+    return withCors(await me(request, env), request, env);
   }
 
   if (request.method === "GET" && path === "/api/business/me") {
-    return withCors(await getBusiness(request, env));
+    return withCors(await getBusiness(request, env), request, env);
   }
 
   // Seguridad deliberada: no existen rutas operativas todavía en este esqueleto.
@@ -38,24 +38,40 @@ function normalizePath(pathname) {
   return value || "/";
 }
 
-function corsHeaders() {
-  return {
-    "access-control-allow-origin": "*",
-    "access-control-allow-headers": "authorization, content-type",
-    "access-control-allow-methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
-  };
+function allowedOrigins(env) {
+  return String(env?.ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
 }
 
-function withCors(response) {
+function corsHeaders(request, env) {
+  const headers = new Headers({
+    "access-control-allow-headers": "authorization, content-type",
+    "access-control-allow-methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+  });
+
+  const origin = request.headers.get("Origin");
+  if (origin) {
+    headers.set("Vary", "Origin");
+    if (allowedOrigins(env).includes(origin)) {
+      headers.set("access-control-allow-origin", origin);
+    }
+  }
+
+  return headers;
+}
+
+function withCors(response, request, env) {
   const headers = new Headers(response.headers);
-  for (const [key, value] of Object.entries(corsHeaders())) headers.set(key, value);
+  for (const [key, value] of corsHeaders(request, env).entries()) headers.set(key, value);
   return new Response(response.body, { status: response.status, headers });
 }
 
-export async function handleError(error) {
+export async function handleError(error, request, env) {
   if (error instanceof HttpError) {
-    return withCors(fail(error.code, error.message, error.status, error.details));
+    return withCors(fail(error.code, error.message, error.status, error.details), request, env);
   }
 
-  return withCors(fail("INTERNAL_ERROR", "Error interno", 500));
+  return withCors(fail("INTERNAL_ERROR", "Error interno", 500), request, env);
 }

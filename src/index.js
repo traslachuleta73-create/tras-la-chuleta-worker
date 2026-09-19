@@ -6,7 +6,7 @@ export default {
       return await router(request, env, ctx);
     } catch (error) {
       console.error("Worker error", error);
-      return await handleError(error);
+      return await handleError(error, request, env);
     }
   },
 };
