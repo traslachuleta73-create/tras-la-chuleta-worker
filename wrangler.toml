@@ -5,4 +5,4 @@ compatibility_date = "2026-09-19"
 [vars]
 ENVIRONMENT = "development"
 # Lista separada por comas. Vacía por defecto: no se permite CORS cross-origin hasta configurarla.
-ALLOWED_ORIGINS = ""
+ALLOWED_ORIGINS = "https://traslachuleta.com"
