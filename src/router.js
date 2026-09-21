@@ -1,9 +1,24 @@
-import { requireAuth } from "./auth.js";
 import { HttpError } from "./errors.js";
-import { fail, ok } from "./response.js";
+import { fail } from "./response.js";
 import { health } from "./routes/health.js";
 import { me } from "./routes/auth.js";
 import { getBusiness } from "./routes/business.js";
+import {
+  openConsumption,
+  cancelConsumption,
+  createOrder,
+  addOrderItem,
+  receiveOrder,
+  startPreparation,
+  markStationReady,
+  deliverOrder,
+  cancelOrder,
+  replaceOrder,
+  createPayment,
+  confirmPayment,
+  openCut,
+  executeCut,
+} from "./routes/core.js";
 
 export async function router(request, env) {
   const url = new URL(request.url);
@@ -25,7 +40,27 @@ export async function router(request, env) {
     return withCors(await getBusiness(request, env), request, env);
   }
 
-  // Seguridad deliberada: no existen rutas operativas todavía en este esqueleto.
+  const routes = {
+    "/api/consumptions/open": openConsumption,
+    "/api/consumptions/cancel": cancelConsumption,
+    "/api/orders": createOrder,
+    "/api/orders/items": addOrderItem,
+    "/api/orders/receive": receiveOrder,
+    "/api/orders/prepare": startPreparation,
+    "/api/orders/station-ready": markStationReady,
+    "/api/orders/deliver": deliverOrder,
+    "/api/orders/cancel": cancelOrder,
+    "/api/orders/replace": replaceOrder,
+    "/api/payments": createPayment,
+    "/api/payments/confirm": confirmPayment,
+    "/api/cuts/open": openCut,
+    "/api/cuts/execute": executeCut,
+  };
+
+  if (request.method === "POST" && routes[path]) {
+    return withCors(await routes[path](request, env), request, env);
+  }
+
   if (path.startsWith("/api/")) {
     throw new HttpError(404, "NOT_FOUND", "Ruta API no implementada");
   }
@@ -64,13 +99,19 @@ function corsHeaders(request, env) {
 
 function withCors(response, request, env) {
   const headers = new Headers(response.headers);
-  for (const [key, value] of corsHeaders(request, env).entries()) headers.set(key, value);
+  for (const [key, value] of corsHeaders(request, env).entries()) {
+    headers.set(key, value);
+  }
   return new Response(response.body, { status: response.status, headers });
 }
 
 export async function handleError(error, request, env) {
   if (error instanceof HttpError) {
-    return withCors(fail(error.code, error.message, error.status, error.details), request, env);
+    return withCors(
+      fail(error.code, error.message, error.status, error.details),
+      request,
+      env,
+    );
   }
 
   return withCors(fail("INTERNAL_ERROR", "Error interno", 500), request, env);
