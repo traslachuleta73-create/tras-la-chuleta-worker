@@ -18,6 +18,7 @@ import {
   confirmPayment,
   openCut,
   executeCut,
+  setOrderNotificationPreference,
 } from "./routes/core.js";
 
 export async function router(request, env) {
@@ -55,6 +56,7 @@ export async function router(request, env) {
     "/api/payments/confirm": confirmPayment,
     "/api/cuts/open": openCut,
     "/api/cuts/execute": executeCut,
+    "/api/orders/notification-preference": setOrderNotificationPreference,
   };
 
   if (request.method === "POST" && routes[path]) {
