@@ -48,3 +48,32 @@ ADMIN, CAJA y MESERO pueden abrir un consumo. Los identificadores de espacio y m
 - Cada negocio elige y opera sus terminales, bancos, aplicaciones o canales externos y es responsable de comprobar sus cobros.
 - Códigos de métodos anteriores quedan deshabilitados para nuevos cobros y su historial no se reescribe.
 - Integraciones o generación de QR/enlaces serían un alcance futuro separado, no parte de este CORE actual.
+
+## Máquina de estados para comandas por estación — v1
+
+### Estado de cada estación
+
+Cada estación lleva su propio avance, independiente de las demás:
+
+`PENDING → RECEIVED → PREPARING → READY`
+
+- `PENDING`: la comanda de esa estación está emitida y espera recepción.
+- `RECEIVED`: Cocina o Barra confirma que recibió su comanda.
+- `PREPARING`: esa estación inició la preparación de sus partidas.
+- `READY`: esa estación terminó y entrega sus partidas a Caja.
+- Una estación no puede avanzar el trabajo de otra estación.
+
+### Estado global del pedido
+
+`NEW → RECEIVED → PREPARING → READY_FOR_CASHIER → CASHIER_ASSEMBLING → READY → DELIVERED`
+
+- El pedido pasa a `PREPARING` cuando inicia el trabajo de las estaciones.
+- Solo cuando todas sus partidas de todas las estaciones están en `READY`, pasa a `READY_FOR_CASHIER`.
+- Caja debe registrar explícitamente que recibió todo lo preparado; entonces pasa a `CASHIER_ASSEMBLING`.
+- En `CASHIER_ASSEMBLING`, Caja integra y verifica el pedido para llevar, incluidos empaque, servilletas, sal, pimienta, chiles en vinagre y los complementos aplicables.
+- Caja marca `READY` solo cuando terminó el armado y el pedido se puede entregar al cliente.
+- La entrega física al cliente es una acción posterior: `DELIVERED`.
+
+El `READY` de una estación significa que sus partidas quedaron preparadas. El `READY` global significa que Caja recibió, integró y verificó el pedido completo. No son el mismo evento.
+
+La matriz por producto determina a qué estación va cada partida. Los nombres anteriores son los códigos de estado acordados para la siguiente implementación.
