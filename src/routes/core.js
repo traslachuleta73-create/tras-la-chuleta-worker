@@ -171,3 +171,14 @@ export async function executeCut(request, env) {
     p_totals: body.totals ?? {},
   });
 }
+
+export async function setOrderNotificationPreference(request, env) {
+  const body = await readJson(request);
+
+  return callRpc(request, env, "set_order_notification_preference", {
+    p_order_id: required(body, "order_id"),
+    p_channel_code: required(body, "channel_code"),
+    p_target: required(body, "target"),
+    p_is_active: body.is_active ?? true,
+  });
+}
