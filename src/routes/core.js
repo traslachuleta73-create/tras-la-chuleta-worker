@@ -169,6 +169,32 @@ export async function confirmPayment(request, env) {
   });
 }
 
+export async function listCuts(request, env) {
+  const { supabase } = await requireAuth(request, env);
+  const response = await supabase.rest(
+    "cuts?select=id,status,opened_at,executed_at,operator_user_id,totals&order=opened_at.desc",
+  );
+
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    const message = payload?.message || "No se pudieron consultar los cortes";
+    const code = payload?.code || "CUT_LIST_FAILED";
+    throw new HttpError(
+      response.status >= 400 && response.status < 500 ? response.status : 502,
+      code,
+      message,
+    );
+  }
+
+  return ok(payload);
+}
+
 export async function openCut(request, env) {
   const body = await readJson(request);
   const args = {};
