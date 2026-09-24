@@ -19,6 +19,7 @@ import {
   openCut,
   executeCut,
   setOrderNotificationPreference,
+  printDocument,
 } from "./routes/core.js";
 
 export async function router(request, env) {
@@ -57,6 +58,7 @@ export async function router(request, env) {
     "/api/cuts/open": openCut,
     "/api/cuts/execute": executeCut,
     "/api/orders/notification-preference": setOrderNotificationPreference,
+    "/api/print": printDocument,
   };
 
   if (request.method === "POST" && routes[path]) {
