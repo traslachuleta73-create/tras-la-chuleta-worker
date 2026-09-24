@@ -108,16 +108,66 @@ export async function addOrderItem(request, env) {
 
 export async function receiveOrder(request, env) {
   const body = await readJson(request);
-  return callRpc(request, env, "receive_order", {
+  return callRpc(request, env, "receive_order_station", {
     p_order_id: required(body, "order_id"),
+    p_station_id: required(body, "station_id"),
   });
 }
 
 export async function startPreparation(request, env) {
   const body = await readJson(request);
-  return callRpc(request, env, "start_order_preparation", {
+  return callRpc(request, env, "start_order_station_preparation", {
+    p_order_id: required(body, "order_id"),
+    p_station_id: required(body, "station_id"),
+  });
+}
+
+export async function receivePreparedOrder(request, env) {
+  const body = await readJson(request);
+  return callRpc(request, env, "receive_prepared_order", {
     p_order_id: required(body, "order_id"),
   });
+}
+
+export async function markOrderReady(request, env) {
+  const body = await readJson(request);
+  return callRpc(request, env, "mark_order_ready", {
+    p_order_id: required(body, "order_id"),
+  });
+}
+
+async function listRest(request, env, path, errorCode, errorMessage) {
+  const { supabase } = await requireAuth(request, env);
+  const response = await supabase.rest(path);
+  let payload = null;
+  try { payload = await response.json(); } catch { payload = null; }
+  if (!response.ok) {
+    throw new HttpError(
+      response.status >= 400 && response.status < 500 ? response.status : 502,
+      payload?.code || errorCode,
+      payload?.message || errorMessage,
+    );
+  }
+  return ok(payload);
+}
+
+export async function listStationOrders(request, env) {
+  const url = new URL(request.url);
+  const stationId = url.searchParams.get("station_id");
+  const stationFilter = stationId ? `&station_id=eq.${encodeURIComponent(stationId)}` : "";
+  return listRest(
+    request, env,
+    `order_station_work?select=id,business_id,order_id,station_id,status,received_at,preparing_at,ready_at,station:stations(id,code,name,station_type),order:orders(id,order_number,channel_code,status,note,created_at,consumption_id,items:order_items(id,product_id,station_id,quantity,unit_price,notes,ready_at,product:products(id,name)) )&status=in.(PENDING,RECEIVED,PREPARING,READY)${stationFilter}&order=created_at.asc`,
+    "STATION_ORDERS_FAILED", "No se pudieron consultar las comandas por estación",
+  );
+}
+
+export async function listActiveOrders(request, env) {
+  return listRest(
+    request, env,
+    "orders?select=id,order_number,channel_code,status,note,created_at,consumption_id,items:order_items(id,product_id,station_id,quantity,unit_price,notes,ready_at,product:products(id,name),station:stations(id,code,name,station_type))&status=in.(NEW,RECEIVED,PREPARING,READY_FOR_CASHIER,CASHIER_ASSEMBLING,READY)&order=created_at.asc",
+    "ORDERS_LIST_FAILED", "No se pudieron consultar los pedidos activos",
+  );
 }
 
 export async function markStationReady(request, env) {
