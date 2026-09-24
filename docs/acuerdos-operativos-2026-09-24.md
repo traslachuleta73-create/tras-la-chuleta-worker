@@ -38,3 +38,13 @@ ADMIN, CAJA y MESERO pueden abrir un consumo. Los identificadores de espacio y m
 
 - Cancelaciones y modificaciones requieren un actor con permiso explícito; el solicitante no puede ejecutar una operación para la que su rol no está autorizado.
 - Las cancelaciones requieren motivo y registro de auditoría. Las modificaciones que reemplazan un pedido también requieren motivo y auditoría.
+
+## Registro visual de formas de pago
+
+- Las únicas formas que se seleccionan en el CORE son `CASH` (Efectivo), `CARD` (Tarjeta) y `TRANSFER` (Transferencia).
+- La selección identifica el medio declarado por el negocio; no es una integración con el proveedor ni una validación automática del movimiento.
+- ADMIN o CAJA registran la confirmación manualmente después de que el negocio verifica la recepción por su propio medio (efectivo recibido, terminal aprobada o fondos observados en su canal de transferencia).
+- El CORE guarda método, monto, estado, usuario que confirma y fecha/hora. No procesa pagos, verifica liquidaciones, genera QR o enlaces, custodia fondos ni atiende disputas con proveedores.
+- Cada negocio elige y opera sus terminales, bancos, aplicaciones o canales externos y es responsable de comprobar sus cobros.
+- Códigos de métodos anteriores quedan deshabilitados para nuevos cobros y su historial no se reescribe.
+- Integraciones o generación de QR/enlaces serían un alcance futuro separado, no parte de este CORE actual.
