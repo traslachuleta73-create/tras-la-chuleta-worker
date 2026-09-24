@@ -12,6 +12,10 @@ import {
   addOrderItem,
   receiveOrder,
   startPreparation,
+  receivePreparedOrder,
+  markOrderReady,
+  listStationOrders,
+  listActiveOrders,
   markStationReady,
   deliverOrder,
   cancelOrder,
@@ -49,6 +53,14 @@ export async function router(request, env) {
     return withCors(await listCuts(request, env), request, env);
   }
 
+  if (request.method === "GET" && path === "/api/station-orders") {
+    return withCors(await listStationOrders(request, env), request, env);
+  }
+
+  if (request.method === "GET" && path === "/api/orders/active") {
+    return withCors(await listActiveOrders(request, env), request, env);
+  }
+
   const routes = {
     "/api/consumptions/open": openConsumption,
     "/api/consumptions/request-close": requestConsumptionClose,
@@ -58,6 +70,8 @@ export async function router(request, env) {
     "/api/orders/items": addOrderItem,
     "/api/orders/receive": receiveOrder,
     "/api/orders/prepare": startPreparation,
+    "/api/orders/receive-prepared": receivePreparedOrder,
+    "/api/orders/ready": markOrderReady,
     "/api/orders/station-ready": markStationReady,
     "/api/orders/deliver": deliverOrder,
     "/api/orders/cancel": cancelOrder,
