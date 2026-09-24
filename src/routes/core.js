@@ -172,6 +172,17 @@ export async function executeCut(request, env) {
   });
 }
 
+export async function printDocument(request, env) {
+  const body = await readJson(request);
+  return callRpc(request, env, "get_print_document", {
+    p_document_type: required(body, "document_type"),
+    p_order_id: body.order_id ?? null,
+    p_consumption_id: body.consumption_id ?? null,
+    p_cut_id: body.cut_id ?? null,
+    p_station_id: body.station_id ?? null,
+  });
+}
+
 export async function setOrderNotificationPreference(request, env) {
   const body = await readJson(request);
 
