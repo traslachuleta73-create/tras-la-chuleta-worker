@@ -157,11 +157,11 @@ RETURNS public.order_items
 LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public','private','pg_temp'
 AS $function$
 DECLARE v_item public.order_items; v_order public.orders; v_work public.order_station_work; v_station public.stations;
-  v_before_item jsonb; v_before_work jsonb; v_before_order jsonb;
+  v_order_id uuid; v_before_item jsonb; v_before_work jsonb; v_before_order jsonb;
 BEGIN
-  SELECT order_id INTO v_item FROM public.order_items WHERE id=p_order_item_id;
+  SELECT order_id INTO v_order_id FROM public.order_items WHERE id=p_order_item_id;
   IF NOT FOUND THEN RAISE EXCEPTION 'ORDER_ITEM_NOT_FOUND'; END IF;
-  SELECT * INTO v_order FROM public.orders WHERE id=v_item.order_id AND business_id=private.current_business_id() FOR UPDATE;
+  SELECT * INTO v_order FROM public.orders WHERE id=v_order_id AND business_id=private.current_business_id() FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'ORDER_NOT_FOUND'; END IF;
   SELECT * INTO v_item FROM public.order_items WHERE id=p_order_item_id AND order_id=v_order.id FOR UPDATE;
   SELECT * INTO v_work FROM public.order_station_work WHERE order_id=v_order.id AND station_id=v_item.station_id AND business_id=v_order.business_id FOR UPDATE;
