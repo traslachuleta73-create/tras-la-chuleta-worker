@@ -5,6 +5,8 @@ import { me } from "./routes/auth.js";
 import { getBusiness } from "./routes/business.js";
 import {
   openConsumption,
+  requestConsumptionClose,
+  closeConsumption,
   cancelConsumption,
   createOrder,
   addOrderItem,
@@ -44,6 +46,8 @@ export async function router(request, env) {
 
   const routes = {
     "/api/consumptions/open": openConsumption,
+    "/api/consumptions/request-close": requestConsumptionClose,
+    "/api/consumptions/close": closeConsumption,
     "/api/consumptions/cancel": cancelConsumption,
     "/api/orders": createOrder,
     "/api/orders/items": addOrderItem,
