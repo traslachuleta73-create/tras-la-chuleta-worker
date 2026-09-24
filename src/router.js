@@ -18,6 +18,7 @@ import {
   replaceOrder,
   createPayment,
   confirmPayment,
+  listCuts,
   openCut,
   executeCut,
   setOrderNotificationPreference,
@@ -42,6 +43,10 @@ export async function router(request, env) {
 
   if (request.method === "GET" && path === "/api/business/me") {
     return withCors(await getBusiness(request, env), request, env);
+  }
+
+  if (request.method === "GET" && path === "/api/cuts") {
+    return withCors(await listCuts(request, env), request, env);
   }
 
   const routes = {
