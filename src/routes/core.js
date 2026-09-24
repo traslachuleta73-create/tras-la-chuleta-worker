@@ -59,8 +59,22 @@ async function callRpc(request, env, rpcName, args = {}) {
 export async function openConsumption(request, env) {
   const body = await readJson(request);
   return callRpc(request, env, "open_consumption", {
-    p_space_id: required(body, "space_id"),
-    p_service_mode_id: required(body, "service_mode_id"),
+    p_space_id: body.space_id ?? null,
+    p_service_mode_id: body.service_mode_id ?? null,
+  });
+}
+
+export async function requestConsumptionClose(request, env) {
+  const body = await readJson(request);
+  return callRpc(request, env, "request_consumption_close", {
+    p_consumption_id: required(body, "consumption_id"),
+  });
+}
+
+export async function closeConsumption(request, env) {
+  const body = await readJson(request);
+  return callRpc(request, env, "close_consumption", {
+    p_consumption_id: required(body, "consumption_id"),
   });
 }
 
