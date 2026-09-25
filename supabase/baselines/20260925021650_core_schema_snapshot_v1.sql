@@ -586,8 +586,7 @@ begin
 
   return new;
 end;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION private.current_business_id()
  RETURNS uuid
@@ -600,8 +599,7 @@ AS $function$
   where p.id = auth.uid()
     and p.is_active = true
   limit 1;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION private.current_role_code()
  RETURNS text
@@ -614,8 +612,7 @@ AS $function$
   where p.id = auth.uid()
     and p.is_active = true
   limit 1;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION private.is_admin()
  RETURNS boolean
@@ -624,8 +621,7 @@ CREATE OR REPLACE FUNCTION private.is_admin()
  SET search_path TO 'public', 'pg_temp'
 AS $function$
   select coalesce(private.current_role_code() = 'ADMIN', false);
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION private.require_active_user()
  RETURNS uuid
@@ -638,8 +634,7 @@ AS $function$
   where p.id = auth.uid()
     and p.is_active = true
   limit 1;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION private.require_any_role(required_roles text[])
  RETURNS boolean
@@ -654,8 +649,7 @@ AS $function$
       and p.is_active = true
       and p.role_code = any(required_roles)
   );
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION private.require_role(required_role text)
  RETURNS boolean
@@ -670,8 +664,7 @@ AS $function$
       and p.is_active = true
       and p.role_code = required_role
   );
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION private.sync_order_station_work()
  RETURNS trigger
@@ -688,8 +681,7 @@ BEGIN
   ON CONFLICT (business_id,order_id,station_id) DO NOTHING;
   RETURN NEW;
 END;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION private.write_audit(p_business_id uuid, p_action text, p_entity_type text, p_entity_id text, p_before jsonb, p_after jsonb, p_reason text DEFAULT NULL::text)
  RETURNS void
@@ -707,8 +699,7 @@ begin
     p_before, p_after, p_reason
   );
 end;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.add_order_item(p_order_id uuid, p_product_id uuid, p_station_id uuid, p_quantity numeric, p_notes text DEFAULT NULL::text)
  RETURNS order_items
@@ -795,8 +786,7 @@ BEGIN
   );
   RETURN v_consumption;
 END;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.cancel_order(p_order_id uuid, p_reason text)
  RETURNS orders
@@ -824,8 +814,7 @@ BEGIN
   PERFORM private.write_audit(v_business,'ORDER_CANCELLED','ORDER',v_order.id::text,v_before,to_jsonb(v_order),trim(p_reason));
   RETURN v_order;
 END;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.close_consumption(p_consumption_id uuid)
  RETURNS consumptions
@@ -869,8 +858,7 @@ BEGIN
   );
   RETURN v_consumption;
 END;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.confirm_payment(p_payment_id uuid)
  RETURNS payments
@@ -934,8 +922,7 @@ BEGIN
   );
   RETURN v_payment;
 END;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.create_order(p_consumption_id uuid, p_channel_code text, p_notes text DEFAULT NULL::text)
  RETURNS orders
@@ -1004,8 +991,7 @@ BEGIN
   );
   RETURN v_payment;
 END;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.deliver_order(p_order_id uuid)
  RETURNS orders
@@ -1059,8 +1045,7 @@ begin
 
   return v_order;
 end;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.execute_cut(p_cut_id uuid, p_totals jsonb)
  RETURNS cuts
@@ -1171,8 +1156,7 @@ begin
 
   return v_cut;
 end;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_print_document(p_document_type text, p_order_id uuid DEFAULT NULL::uuid, p_consumption_id uuid DEFAULT NULL::uuid, p_cut_id uuid DEFAULT NULL::uuid, p_station_id uuid DEFAULT NULL::uuid)
  RETURNS jsonb
@@ -1348,8 +1332,7 @@ begin
     raise exception using errcode='22023', message='PRINT_DOCUMENT_TYPE_NOT_SUPPORTED';
   end if;
 end;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.mark_order_ready(p_order_id uuid)
  RETURNS orders
@@ -1373,8 +1356,7 @@ BEGIN
   PERFORM private.write_audit(v_order.business_id,'ORDER_READY','ORDER',v_order.id::text,v_before,to_jsonb(v_order),NULL);
   RETURN v_order;
 END;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.mark_order_station_ready(p_order_item_id uuid)
  RETURNS order_items
@@ -1415,8 +1397,7 @@ BEGIN
   END IF;
   RETURN v_item;
 END;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.open_consumption(p_space_id uuid, p_service_mode_id uuid)
  RETURNS consumptions
@@ -1474,8 +1455,7 @@ begin
 
   return v_consumption;
 end;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.open_cut(p_operator_user_id uuid DEFAULT auth.uid())
  RETURNS cuts
@@ -1521,8 +1501,7 @@ BEGIN
 
   RETURN v_cut;
 END;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.receive_order(p_order_id uuid)
  RETURNS orders
@@ -1566,8 +1545,7 @@ BEGIN
 
   RETURN v_order;
 END;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.receive_order_station(p_order_id uuid, p_station_id uuid)
  RETURNS order_station_work
@@ -1599,8 +1577,7 @@ BEGIN
   END IF;
   RETURN v_work;
 END;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.receive_prepared_order(p_order_id uuid)
  RETURNS orders
@@ -1625,8 +1602,7 @@ BEGIN
   PERFORM private.write_audit(v_order.business_id,'ORDER_RECEIVED_BY_CASHIER','ORDER',v_order.id::text,v_before,to_jsonb(v_order),NULL);
   RETURN v_order;
 END;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.replace_order(p_order_id uuid, p_reason text, p_notes text, p_items jsonb)
  RETURNS orders
@@ -1803,8 +1779,7 @@ begin
 
   return v_replacement;
 end;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.request_consumption_close(p_consumption_id uuid)
  RETURNS consumptions
@@ -1841,8 +1816,7 @@ BEGIN
   );
   RETURN v_consumption;
 END;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.set_order_notification_preference(p_order_id uuid, p_channel_code text, p_target text, p_is_active boolean DEFAULT true)
  RETURNS order_notification_preferences
@@ -1893,8 +1867,7 @@ begin
 
   return v_pref;
 end;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.set_order_notification_preference_updated_at()
  RETURNS trigger
@@ -1905,8 +1878,7 @@ begin
   new.updated_at = now();
   return new;
 end;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.start_order_preparation(p_order_id uuid)
  RETURNS orders
@@ -1950,8 +1922,7 @@ begin
 
   return v_order;
 end;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.start_order_station_preparation(p_order_id uuid, p_station_id uuid)
  RETURNS order_station_work
@@ -1983,8 +1954,7 @@ BEGIN
   END IF;
   RETURN v_work;
 END;
-$function$
-;
+$function$;
 
 CREATE TRIGGER order_items_sync_station_work AFTER INSERT ON order_items FOR EACH ROW EXECUTE FUNCTION private.sync_order_station_work();
 
