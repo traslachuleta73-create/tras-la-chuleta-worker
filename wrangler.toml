@@ -1,6 +1,7 @@
 name = "tras-la-chuleta-api-v1"
 main = "src/index.js"
 compatibility_date = "2026-09-19"
+preview_urls = true
 
 [vars]
 ENVIRONMENT = "development"
