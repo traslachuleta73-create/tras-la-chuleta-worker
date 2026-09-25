@@ -235,27 +235,13 @@ CREATE TABLE public.stations (id uuid DEFAULT gen_random_uuid() NOT NULL,
   is_active boolean DEFAULT true NOT NULL,
   created_at timestamp with time zone DEFAULT now() NOT NULL);
 
-ALTER TABLE public.audit_log ADD CONSTRAINT audit_log_actor_user_id_fkey FOREIGN KEY (actor_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
-
-ALTER TABLE public.audit_log ADD CONSTRAINT audit_log_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE RESTRICT;
-
 ALTER TABLE public.audit_log ADD CONSTRAINT audit_log_pkey PRIMARY KEY (id);
-
-ALTER TABLE public.business_channels ADD CONSTRAINT business_channels_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
 
 ALTER TABLE public.business_channels ADD CONSTRAINT business_channels_pkey PRIMARY KEY (business_id, channel_code);
 
 ALTER TABLE public.business_ficha_versions ADD CONSTRAINT business_ficha_versions_business_id_version_key UNIQUE (business_id, version);
 
-ALTER TABLE public.business_ficha_versions ADD CONSTRAINT business_ficha_versions_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
-
-ALTER TABLE public.business_ficha_versions ADD CONSTRAINT business_ficha_versions_client_approved_by_fkey FOREIGN KEY (client_approved_by) REFERENCES auth.users(id);
-
 ALTER TABLE public.business_ficha_versions ADD CONSTRAINT business_ficha_versions_pkey PRIMARY KEY (id);
-
-ALTER TABLE public.business_ficha_versions ADD CONSTRAINT business_ficha_versions_tlc_approved_by_fkey FOREIGN KEY (tlc_approved_by) REFERENCES auth.users(id);
-
-ALTER TABLE public.business_locations ADD CONSTRAINT business_locations_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
 
 ALTER TABLE public.business_locations ADD CONSTRAINT business_locations_business_id_id_key UNIQUE (business_id, id);
 
@@ -263,15 +249,9 @@ ALTER TABLE public.business_locations ADD CONSTRAINT business_locations_business
 
 ALTER TABLE public.business_locations ADD CONSTRAINT business_locations_pkey PRIMARY KEY (id);
 
-ALTER TABLE public.business_modules ADD CONSTRAINT business_modules_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
-
 ALTER TABLE public.business_modules ADD CONSTRAINT business_modules_pkey PRIMARY KEY (business_id, module_code);
 
-ALTER TABLE public.business_payment_methods ADD CONSTRAINT business_payment_methods_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
-
 ALTER TABLE public.business_payment_methods ADD CONSTRAINT business_payment_methods_pkey PRIMARY KEY (business_id, method_code);
-
-ALTER TABLE public.business_presence ADD CONSTRAINT business_presence_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
 
 ALTER TABLE public.business_presence ADD CONSTRAINT business_presence_code_check CHECK (presence_code = ANY (ARRAY['GOOGLE_MAPS'::text, 'GOOGLE_REVIEWS'::text, 'FACEBOOK'::text, 'INSTAGRAM'::text, 'TIKTOK'::text, 'WHATSAPP'::text]));
 
@@ -283,137 +263,53 @@ ALTER TABLE public.businesses ADD CONSTRAINT businesses_slug_key UNIQUE (slug);
 
 ALTER TABLE public.consumptions ADD CONSTRAINT consumptions_business_id_consumption_number_key UNIQUE (business_id, consumption_number);
 
-ALTER TABLE public.consumptions ADD CONSTRAINT consumptions_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE RESTRICT;
-
 ALTER TABLE public.consumptions ADD CONSTRAINT consumptions_business_id_id_key UNIQUE (business_id, id);
 
-ALTER TABLE public.consumptions ADD CONSTRAINT consumptions_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
-
 ALTER TABLE public.consumptions ADD CONSTRAINT consumptions_pkey PRIMARY KEY (id);
-
-ALTER TABLE public.consumptions ADD CONSTRAINT consumptions_service_mode_id_fkey FOREIGN KEY (service_mode_id) REFERENCES service_modes(id) ON DELETE RESTRICT;
-
-ALTER TABLE public.consumptions ADD CONSTRAINT consumptions_service_mode_same_business_fk FOREIGN KEY (business_id, service_mode_id) REFERENCES service_modes(business_id, id);
-
-ALTER TABLE public.consumptions ADD CONSTRAINT consumptions_space_id_fkey FOREIGN KEY (space_id) REFERENCES spaces(id) ON DELETE RESTRICT;
-
-ALTER TABLE public.consumptions ADD CONSTRAINT consumptions_space_same_business_fk FOREIGN KEY (business_id, space_id) REFERENCES spaces(business_id, id);
 
 ALTER TABLE public.consumptions ADD CONSTRAINT consumptions_status_check CHECK (status = ANY (ARRAY['OPEN'::text, 'PENDING_CLOSE'::text, 'CLOSED'::text, 'CANCELLED'::text]));
 
 ALTER TABLE public.cut_discrepancies ADD CONSTRAINT cut_discrepancies_amount_check CHECK (amount > 0::numeric);
 
-ALTER TABLE public.cut_discrepancies ADD CONSTRAINT cut_discrepancies_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE RESTRICT;
-
-ALTER TABLE public.cut_discrepancies ADD CONSTRAINT cut_discrepancies_cut_id_fkey FOREIGN KEY (cut_id) REFERENCES cuts(id) ON DELETE RESTRICT;
-
 ALTER TABLE public.cut_discrepancies ADD CONSTRAINT cut_discrepancies_discrepancy_type_check CHECK (discrepancy_type = ANY (ARRAY['SHORTAGE'::text, 'SURPLUS'::text]));
 
 ALTER TABLE public.cut_discrepancies ADD CONSTRAINT cut_discrepancies_pkey PRIMARY KEY (id);
-
-ALTER TABLE public.cut_discrepancies ADD CONSTRAINT cut_discrepancies_recorded_by_fkey FOREIGN KEY (recorded_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
-
-ALTER TABLE public.cut_discrepancies ADD CONSTRAINT cut_discrepancies_related_user_id_fkey FOREIGN KEY (related_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
-
-ALTER TABLE public.cuts ADD CONSTRAINT cuts_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE RESTRICT;
-
-ALTER TABLE public.cuts ADD CONSTRAINT cuts_executed_by_fkey FOREIGN KEY (executed_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
-
-ALTER TABLE public.cuts ADD CONSTRAINT cuts_operator_user_fkey FOREIGN KEY (operator_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
 
 ALTER TABLE public.cuts ADD CONSTRAINT cuts_pkey PRIMARY KEY (id);
 
 ALTER TABLE public.cuts ADD CONSTRAINT cuts_status_check CHECK (status = ANY (ARRAY['OPEN'::text, 'EXECUTED'::text]));
 
-ALTER TABLE public.order_items ADD CONSTRAINT order_items_order_id_fkey FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE RESTRICT;
-
 ALTER TABLE public.order_items ADD CONSTRAINT order_items_pkey PRIMARY KEY (id);
-
-ALTER TABLE public.order_items ADD CONSTRAINT order_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT;
 
 ALTER TABLE public.order_items ADD CONSTRAINT order_items_quantity_check CHECK (quantity > 0::numeric);
 
-ALTER TABLE public.order_items ADD CONSTRAINT order_items_ready_by_fkey FOREIGN KEY (ready_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
-
-ALTER TABLE public.order_items ADD CONSTRAINT order_items_station_id_fkey FOREIGN KEY (station_id) REFERENCES stations(id) ON DELETE RESTRICT;
-
 ALTER TABLE public.order_items ADD CONSTRAINT order_items_unit_price_check CHECK (unit_price >= 0::numeric);
-
-ALTER TABLE public.order_notification_preferences ADD CONSTRAINT order_notification_preferences_pkey PRIMARY KEY (order_id);
-
-ALTER TABLE public.order_notification_preferences ADD CONSTRAINT order_notification_preferences_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id);
-
-ALTER TABLE public.order_notification_preferences ADD CONSTRAINT order_notification_preferences_channel_check CHECK (length(TRIM(BOTH FROM channel_code)) >= 1 AND length(TRIM(BOTH FROM channel_code)) <= 50);
-
-ALTER TABLE public.order_notification_preferences ADD CONSTRAINT order_notification_preferences_order_id_fkey FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE;
 
 ALTER TABLE public.order_notification_preferences ADD CONSTRAINT order_notification_preferences_target_check CHECK (length(TRIM(BOTH FROM target)) >= 1 AND length(TRIM(BOTH FROM target)) <= 255);
 
-ALTER TABLE public.order_station_work ADD CONSTRAINT order_station_work_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE RESTRICT;
+ALTER TABLE public.order_notification_preferences ADD CONSTRAINT order_notification_preferences_pkey PRIMARY KEY (order_id);
 
-ALTER TABLE public.order_station_work ADD CONSTRAINT order_station_work_order_same_business_fk FOREIGN KEY (business_id, order_id) REFERENCES orders(business_id, id) ON DELETE RESTRICT;
+ALTER TABLE public.order_notification_preferences ADD CONSTRAINT order_notification_preferences_channel_check CHECK (length(TRIM(BOTH FROM channel_code)) >= 1 AND length(TRIM(BOTH FROM channel_code)) <= 50);
 
 ALTER TABLE public.order_station_work ADD CONSTRAINT order_station_work_order_station_key UNIQUE (business_id, order_id, station_id);
 
 ALTER TABLE public.order_station_work ADD CONSTRAINT order_station_work_pkey PRIMARY KEY (id);
 
-ALTER TABLE public.order_station_work ADD CONSTRAINT order_station_work_preparing_by_fkey FOREIGN KEY (preparing_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
-
-ALTER TABLE public.order_station_work ADD CONSTRAINT order_station_work_ready_by_fkey FOREIGN KEY (ready_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
-
-ALTER TABLE public.order_station_work ADD CONSTRAINT order_station_work_received_by_fkey FOREIGN KEY (received_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
-
-ALTER TABLE public.order_station_work ADD CONSTRAINT order_station_work_station_same_business_fk FOREIGN KEY (business_id, station_id) REFERENCES stations(business_id, id) ON DELETE RESTRICT;
-
 ALTER TABLE public.order_station_work ADD CONSTRAINT order_station_work_status_check CHECK (status = ANY (ARRAY['PENDING'::text, 'RECEIVED'::text, 'PREPARING'::text, 'READY'::text, 'CANCELLED'::text]));
-
-ALTER TABLE public.orders ADD CONSTRAINT orders_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE RESTRICT;
 
 ALTER TABLE public.orders ADD CONSTRAINT orders_business_id_id_key UNIQUE (business_id, id);
 
 ALTER TABLE public.orders ADD CONSTRAINT orders_business_id_order_number_key UNIQUE (business_id, order_number);
 
-ALTER TABLE public.orders ADD CONSTRAINT orders_cancelled_by_fkey FOREIGN KEY (cancelled_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
-
-ALTER TABLE public.orders ADD CONSTRAINT orders_cashier_received_by_fkey FOREIGN KEY (cashier_received_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
-
-ALTER TABLE public.orders ADD CONSTRAINT orders_channel_same_business_fk FOREIGN KEY (business_id, channel_code) REFERENCES business_channels(business_id, channel_code);
-
-ALTER TABLE public.orders ADD CONSTRAINT orders_consumption_id_fkey FOREIGN KEY (consumption_id) REFERENCES consumptions(id) ON DELETE RESTRICT;
-
-ALTER TABLE public.orders ADD CONSTRAINT orders_consumption_same_business_fk FOREIGN KEY (business_id, consumption_id) REFERENCES consumptions(business_id, id);
-
-ALTER TABLE public.orders ADD CONSTRAINT orders_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
-
-ALTER TABLE public.orders ADD CONSTRAINT orders_delivered_by_fkey FOREIGN KEY (delivered_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
-
 ALTER TABLE public.orders ADD CONSTRAINT orders_pkey PRIMARY KEY (id);
-
-ALTER TABLE public.orders ADD CONSTRAINT orders_ready_by_fkey FOREIGN KEY (ready_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
-
-ALTER TABLE public.orders ADD CONSTRAINT orders_replacement_for_order_id_fkey FOREIGN KEY (replacement_for_order_id) REFERENCES orders(id) ON DELETE RESTRICT;
 
 ALTER TABLE public.orders ADD CONSTRAINT orders_status_check CHECK (status = ANY (ARRAY['NEW'::text, 'RECEIVED'::text, 'PREPARING'::text, 'READY_FOR_CASHIER'::text, 'CASHIER_ASSEMBLING'::text, 'READY'::text, 'DELIVERED'::text, 'CANCELLED'::text]));
 
 ALTER TABLE public.payments ADD CONSTRAINT payments_amount_check CHECK (amount > 0::numeric);
 
-ALTER TABLE public.payments ADD CONSTRAINT payments_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE RESTRICT;
-
-ALTER TABLE public.payments ADD CONSTRAINT payments_confirmed_by_fkey FOREIGN KEY (confirmed_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
-
-ALTER TABLE public.payments ADD CONSTRAINT payments_consumption_id_fkey FOREIGN KEY (consumption_id) REFERENCES consumptions(id) ON DELETE RESTRICT;
-
-ALTER TABLE public.payments ADD CONSTRAINT payments_consumption_same_business_fk FOREIGN KEY (business_id, consumption_id) REFERENCES consumptions(business_id, id);
-
-ALTER TABLE public.payments ADD CONSTRAINT payments_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
-
-ALTER TABLE public.payments ADD CONSTRAINT payments_method_same_business_fk FOREIGN KEY (business_id, method_code) REFERENCES business_payment_methods(business_id, method_code);
-
 ALTER TABLE public.payments ADD CONSTRAINT payments_pkey PRIMARY KEY (id);
 
 ALTER TABLE public.payments ADD CONSTRAINT payments_status_check CHECK (status = ANY (ARRAY['PENDING'::text, 'CONFIRMED'::text, 'EXPIRED'::text, 'CANCELLED'::text]));
-
-ALTER TABLE public.product_categories ADD CONSTRAINT product_categories_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
 
 ALTER TABLE public.product_categories ADD CONSTRAINT product_categories_business_id_id_key UNIQUE (business_id, id);
 
@@ -423,55 +319,29 @@ ALTER TABLE public.product_categories ADD CONSTRAINT product_categories_pkey PRI
 
 ALTER TABLE public.product_stations ADD CONSTRAINT product_stations_pkey PRIMARY KEY (product_id, station_id);
 
-ALTER TABLE public.product_stations ADD CONSTRAINT product_stations_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE;
-
-ALTER TABLE public.product_stations ADD CONSTRAINT product_stations_station_id_fkey FOREIGN KEY (station_id) REFERENCES stations(id) ON DELETE RESTRICT;
-
-ALTER TABLE public.products ADD CONSTRAINT products_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
-
 ALTER TABLE public.products ADD CONSTRAINT products_business_id_id_key UNIQUE (business_id, id);
-
-ALTER TABLE public.products ADD CONSTRAINT products_category_id_fkey FOREIGN KEY (category_id) REFERENCES product_categories(id) ON DELETE RESTRICT;
-
-ALTER TABLE public.products ADD CONSTRAINT products_category_same_business_fk FOREIGN KEY (business_id, category_id) REFERENCES product_categories(business_id, id);
 
 ALTER TABLE public.products ADD CONSTRAINT products_pkey PRIMARY KEY (id);
 
 ALTER TABLE public.products ADD CONSTRAINT products_price_check CHECK (price >= 0::numeric);
 
-ALTER TABLE public.profiles ADD CONSTRAINT profiles_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE RESTRICT;
-
-ALTER TABLE public.profiles ADD CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE RESTRICT;
-
 ALTER TABLE public.profiles ADD CONSTRAINT profiles_pkey PRIMARY KEY (id);
-
-ALTER TABLE public.profiles ADD CONSTRAINT profiles_role_code_fkey FOREIGN KEY (role_code) REFERENCES roles(code) ON DELETE RESTRICT;
 
 ALTER TABLE public.roles ADD CONSTRAINT roles_pkey PRIMARY KEY (code);
 
 ALTER TABLE public.service_modes ADD CONSTRAINT service_modes_business_id_code_key UNIQUE (business_id, code);
 
-ALTER TABLE public.service_modes ADD CONSTRAINT service_modes_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
-
 ALTER TABLE public.service_modes ADD CONSTRAINT service_modes_business_id_id_key UNIQUE (business_id, id);
 
 ALTER TABLE public.service_modes ADD CONSTRAINT service_modes_pkey PRIMARY KEY (id);
-
-ALTER TABLE public.spaces ADD CONSTRAINT spaces_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
 
 ALTER TABLE public.spaces ADD CONSTRAINT spaces_business_id_id_key UNIQUE (business_id, id);
 
 ALTER TABLE public.spaces ADD CONSTRAINT spaces_business_id_name_key UNIQUE (business_id, name);
 
-ALTER TABLE public.spaces ADD CONSTRAINT spaces_business_location_same_business_fk FOREIGN KEY (business_id, location_id) REFERENCES business_locations(business_id, id);
-
-ALTER TABLE public.spaces ADD CONSTRAINT spaces_location_id_fkey FOREIGN KEY (location_id) REFERENCES business_locations(id) ON DELETE RESTRICT;
-
 ALTER TABLE public.spaces ADD CONSTRAINT spaces_pkey PRIMARY KEY (id);
 
 ALTER TABLE public.stations ADD CONSTRAINT stations_business_id_code_key UNIQUE (business_id, code);
-
-ALTER TABLE public.stations ADD CONSTRAINT stations_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
 
 ALTER TABLE public.stations ADD CONSTRAINT stations_business_id_id_key UNIQUE (business_id, id);
 
@@ -569,6 +439,136 @@ CREATE INDEX spaces_business_location_idx ON public.spaces USING btree (business
 
 CREATE INDEX spaces_location_idx ON public.spaces USING btree (location_id);
 
+ALTER TABLE public.audit_log ADD CONSTRAINT audit_log_actor_user_id_fkey FOREIGN KEY (actor_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.audit_log ADD CONSTRAINT audit_log_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.business_channels ADD CONSTRAINT business_channels_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
+
+ALTER TABLE public.business_ficha_versions ADD CONSTRAINT business_ficha_versions_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
+
+ALTER TABLE public.business_ficha_versions ADD CONSTRAINT business_ficha_versions_client_approved_by_fkey FOREIGN KEY (client_approved_by) REFERENCES auth.users(id);
+
+ALTER TABLE public.business_ficha_versions ADD CONSTRAINT business_ficha_versions_tlc_approved_by_fkey FOREIGN KEY (tlc_approved_by) REFERENCES auth.users(id);
+
+ALTER TABLE public.business_locations ADD CONSTRAINT business_locations_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
+
+ALTER TABLE public.business_modules ADD CONSTRAINT business_modules_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
+
+ALTER TABLE public.business_payment_methods ADD CONSTRAINT business_payment_methods_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
+
+ALTER TABLE public.business_presence ADD CONSTRAINT business_presence_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
+
+ALTER TABLE public.consumptions ADD CONSTRAINT consumptions_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.consumptions ADD CONSTRAINT consumptions_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.consumptions ADD CONSTRAINT consumptions_service_mode_id_fkey FOREIGN KEY (service_mode_id) REFERENCES service_modes(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.consumptions ADD CONSTRAINT consumptions_service_mode_same_business_fk FOREIGN KEY (business_id, service_mode_id) REFERENCES service_modes(business_id, id);
+
+ALTER TABLE public.consumptions ADD CONSTRAINT consumptions_space_id_fkey FOREIGN KEY (space_id) REFERENCES spaces(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.consumptions ADD CONSTRAINT consumptions_space_same_business_fk FOREIGN KEY (business_id, space_id) REFERENCES spaces(business_id, id);
+
+ALTER TABLE public.cut_discrepancies ADD CONSTRAINT cut_discrepancies_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.cut_discrepancies ADD CONSTRAINT cut_discrepancies_cut_id_fkey FOREIGN KEY (cut_id) REFERENCES cuts(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.cut_discrepancies ADD CONSTRAINT cut_discrepancies_recorded_by_fkey FOREIGN KEY (recorded_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.cut_discrepancies ADD CONSTRAINT cut_discrepancies_related_user_id_fkey FOREIGN KEY (related_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.cuts ADD CONSTRAINT cuts_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.cuts ADD CONSTRAINT cuts_executed_by_fkey FOREIGN KEY (executed_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.cuts ADD CONSTRAINT cuts_operator_user_fkey FOREIGN KEY (operator_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.order_items ADD CONSTRAINT order_items_order_id_fkey FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.order_items ADD CONSTRAINT order_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.order_items ADD CONSTRAINT order_items_ready_by_fkey FOREIGN KEY (ready_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.order_items ADD CONSTRAINT order_items_station_id_fkey FOREIGN KEY (station_id) REFERENCES stations(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.order_notification_preferences ADD CONSTRAINT order_notification_preferences_order_id_fkey FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE;
+
+ALTER TABLE public.order_notification_preferences ADD CONSTRAINT order_notification_preferences_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id);
+
+ALTER TABLE public.order_station_work ADD CONSTRAINT order_station_work_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.order_station_work ADD CONSTRAINT order_station_work_order_same_business_fk FOREIGN KEY (business_id, order_id) REFERENCES orders(business_id, id) ON DELETE RESTRICT;
+
+ALTER TABLE public.order_station_work ADD CONSTRAINT order_station_work_preparing_by_fkey FOREIGN KEY (preparing_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.order_station_work ADD CONSTRAINT order_station_work_ready_by_fkey FOREIGN KEY (ready_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.order_station_work ADD CONSTRAINT order_station_work_received_by_fkey FOREIGN KEY (received_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.order_station_work ADD CONSTRAINT order_station_work_station_same_business_fk FOREIGN KEY (business_id, station_id) REFERENCES stations(business_id, id) ON DELETE RESTRICT;
+
+ALTER TABLE public.orders ADD CONSTRAINT orders_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.orders ADD CONSTRAINT orders_cancelled_by_fkey FOREIGN KEY (cancelled_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.orders ADD CONSTRAINT orders_cashier_received_by_fkey FOREIGN KEY (cashier_received_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.orders ADD CONSTRAINT orders_channel_same_business_fk FOREIGN KEY (business_id, channel_code) REFERENCES business_channels(business_id, channel_code);
+
+ALTER TABLE public.orders ADD CONSTRAINT orders_consumption_id_fkey FOREIGN KEY (consumption_id) REFERENCES consumptions(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.orders ADD CONSTRAINT orders_consumption_same_business_fk FOREIGN KEY (business_id, consumption_id) REFERENCES consumptions(business_id, id);
+
+ALTER TABLE public.orders ADD CONSTRAINT orders_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.orders ADD CONSTRAINT orders_delivered_by_fkey FOREIGN KEY (delivered_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.orders ADD CONSTRAINT orders_ready_by_fkey FOREIGN KEY (ready_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.orders ADD CONSTRAINT orders_replacement_for_order_id_fkey FOREIGN KEY (replacement_for_order_id) REFERENCES orders(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.payments ADD CONSTRAINT payments_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.payments ADD CONSTRAINT payments_confirmed_by_fkey FOREIGN KEY (confirmed_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.payments ADD CONSTRAINT payments_consumption_id_fkey FOREIGN KEY (consumption_id) REFERENCES consumptions(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.payments ADD CONSTRAINT payments_consumption_same_business_fk FOREIGN KEY (business_id, consumption_id) REFERENCES consumptions(business_id, id);
+
+ALTER TABLE public.payments ADD CONSTRAINT payments_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.payments ADD CONSTRAINT payments_method_same_business_fk FOREIGN KEY (business_id, method_code) REFERENCES business_payment_methods(business_id, method_code);
+
+ALTER TABLE public.product_categories ADD CONSTRAINT product_categories_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
+
+ALTER TABLE public.product_stations ADD CONSTRAINT product_stations_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE;
+
+ALTER TABLE public.product_stations ADD CONSTRAINT product_stations_station_id_fkey FOREIGN KEY (station_id) REFERENCES stations(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.products ADD CONSTRAINT products_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
+
+ALTER TABLE public.products ADD CONSTRAINT products_category_id_fkey FOREIGN KEY (category_id) REFERENCES product_categories(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.products ADD CONSTRAINT products_category_same_business_fk FOREIGN KEY (business_id, category_id) REFERENCES product_categories(business_id, id);
+
+ALTER TABLE public.profiles ADD CONSTRAINT profiles_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.profiles ADD CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.profiles ADD CONSTRAINT profiles_role_code_fkey FOREIGN KEY (role_code) REFERENCES roles(code) ON DELETE RESTRICT;
+
+ALTER TABLE public.service_modes ADD CONSTRAINT service_modes_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
+
+ALTER TABLE public.spaces ADD CONSTRAINT spaces_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
+
+ALTER TABLE public.spaces ADD CONSTRAINT spaces_business_location_same_business_fk FOREIGN KEY (business_id, location_id) REFERENCES business_locations(business_id, id);
+
+ALTER TABLE public.spaces ADD CONSTRAINT spaces_location_id_fkey FOREIGN KEY (location_id) REFERENCES business_locations(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.stations ADD CONSTRAINT stations_business_id_fkey FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
+
 CREATE OR REPLACE FUNCTION private.close_consumption_on_confirmed_payment()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -586,9 +586,10 @@ begin
 
   return new;
 end;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION private.current_business_id()
+
+;CREATE OR REPLACE FUNCTION private.current_business_id()
  RETURNS uuid
  LANGUAGE sql
  STABLE SECURITY DEFINER
@@ -599,9 +600,10 @@ AS $function$
   where p.id = auth.uid()
     and p.is_active = true
   limit 1;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION private.current_role_code()
+
+;CREATE OR REPLACE FUNCTION private.current_role_code()
  RETURNS text
  LANGUAGE sql
  STABLE SECURITY DEFINER
@@ -612,18 +614,20 @@ AS $function$
   where p.id = auth.uid()
     and p.is_active = true
   limit 1;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION private.is_admin()
+
+;CREATE OR REPLACE FUNCTION private.is_admin()
  RETURNS boolean
  LANGUAGE sql
  STABLE SECURITY DEFINER
  SET search_path TO 'public', 'pg_temp'
 AS $function$
   select coalesce(private.current_role_code() = 'ADMIN', false);
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION private.require_active_user()
+
+;CREATE OR REPLACE FUNCTION private.require_active_user()
  RETURNS uuid
  LANGUAGE sql
  STABLE SECURITY DEFINER
@@ -634,9 +638,10 @@ AS $function$
   where p.id = auth.uid()
     and p.is_active = true
   limit 1;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION private.require_any_role(required_roles text[])
+
+;CREATE OR REPLACE FUNCTION private.require_any_role(required_roles text[])
  RETURNS boolean
  LANGUAGE sql
  STABLE SECURITY DEFINER
@@ -649,9 +654,10 @@ AS $function$
       and p.is_active = true
       and p.role_code = any(required_roles)
   );
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION private.require_role(required_role text)
+
+;CREATE OR REPLACE FUNCTION private.require_role(required_role text)
  RETURNS boolean
  LANGUAGE sql
  STABLE SECURITY DEFINER
@@ -664,9 +670,10 @@ AS $function$
       and p.is_active = true
       and p.role_code = required_role
   );
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION private.sync_order_station_work()
+
+;CREATE OR REPLACE FUNCTION private.sync_order_station_work()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -681,9 +688,10 @@ BEGIN
   ON CONFLICT (business_id,order_id,station_id) DO NOTHING;
   RETURN NEW;
 END;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION private.write_audit(p_business_id uuid, p_action text, p_entity_type text, p_entity_id text, p_before jsonb, p_after jsonb, p_reason text DEFAULT NULL::text)
+
+;CREATE OR REPLACE FUNCTION private.write_audit(p_business_id uuid, p_action text, p_entity_type text, p_entity_id text, p_before jsonb, p_after jsonb, p_reason text DEFAULT NULL::text)
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -699,9 +707,10 @@ begin
     p_before, p_after, p_reason
   );
 end;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION public.add_order_item(p_order_id uuid, p_product_id uuid, p_station_id uuid, p_quantity numeric, p_notes text DEFAULT NULL::text)
+
+;CREATE OR REPLACE FUNCTION public.add_order_item(p_order_id uuid, p_product_id uuid, p_station_id uuid, p_quantity numeric, p_notes text DEFAULT NULL::text)
  RETURNS order_items
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -723,9 +732,9 @@ begin
  perform private.write_audit(v_business,'ORDER_ITEM_ADDED','ORDER_ITEM',v_item.id::text,null,to_jsonb(v_item),null);
  return v_item;
 end; $function$
-;
 
-CREATE OR REPLACE FUNCTION public.cancel_consumption(p_consumption_id uuid, p_reason text)
+
+;CREATE OR REPLACE FUNCTION public.cancel_consumption(p_consumption_id uuid, p_reason text)
  RETURNS consumptions
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -786,9 +795,10 @@ BEGIN
   );
   RETURN v_consumption;
 END;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION public.cancel_order(p_order_id uuid, p_reason text)
+
+;CREATE OR REPLACE FUNCTION public.cancel_order(p_order_id uuid, p_reason text)
  RETURNS orders
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -814,9 +824,10 @@ BEGIN
   PERFORM private.write_audit(v_business,'ORDER_CANCELLED','ORDER',v_order.id::text,v_before,to_jsonb(v_order),trim(p_reason));
   RETURN v_order;
 END;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION public.close_consumption(p_consumption_id uuid)
+
+;CREATE OR REPLACE FUNCTION public.close_consumption(p_consumption_id uuid)
  RETURNS consumptions
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -858,9 +869,10 @@ BEGIN
   );
   RETURN v_consumption;
 END;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION public.confirm_payment(p_payment_id uuid)
+
+;CREATE OR REPLACE FUNCTION public.confirm_payment(p_payment_id uuid)
  RETURNS payments
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -922,9 +934,10 @@ BEGIN
   );
   RETURN v_payment;
 END;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION public.create_order(p_consumption_id uuid, p_channel_code text, p_notes text DEFAULT NULL::text)
+
+;CREATE OR REPLACE FUNCTION public.create_order(p_consumption_id uuid, p_channel_code text, p_notes text DEFAULT NULL::text)
  RETURNS orders
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -942,9 +955,9 @@ begin
  perform private.write_audit(v_business,'ORDER_CREATED','ORDER',v_order.id::text,null,to_jsonb(v_order),null);
  return v_order;
 end; $function$
-;
 
-CREATE OR REPLACE FUNCTION public.create_payment(p_consumption_id uuid, p_method_code text, p_amount numeric, p_external_reference text DEFAULT NULL::text)
+
+;CREATE OR REPLACE FUNCTION public.create_payment(p_consumption_id uuid, p_method_code text, p_amount numeric, p_external_reference text DEFAULT NULL::text)
  RETURNS payments
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -991,9 +1004,10 @@ BEGIN
   );
   RETURN v_payment;
 END;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION public.deliver_order(p_order_id uuid)
+
+;CREATE OR REPLACE FUNCTION public.deliver_order(p_order_id uuid)
  RETURNS orders
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -1045,9 +1059,10 @@ begin
 
   return v_order;
 end;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION public.execute_cut(p_cut_id uuid, p_totals jsonb)
+
+;CREATE OR REPLACE FUNCTION public.execute_cut(p_cut_id uuid, p_totals jsonb)
  RETURNS cuts
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -1156,9 +1171,10 @@ begin
 
   return v_cut;
 end;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION public.get_print_document(p_document_type text, p_order_id uuid DEFAULT NULL::uuid, p_consumption_id uuid DEFAULT NULL::uuid, p_cut_id uuid DEFAULT NULL::uuid, p_station_id uuid DEFAULT NULL::uuid)
+
+;CREATE OR REPLACE FUNCTION public.get_print_document(p_document_type text, p_order_id uuid DEFAULT NULL::uuid, p_consumption_id uuid DEFAULT NULL::uuid, p_cut_id uuid DEFAULT NULL::uuid, p_station_id uuid DEFAULT NULL::uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -1332,9 +1348,10 @@ begin
     raise exception using errcode='22023', message='PRINT_DOCUMENT_TYPE_NOT_SUPPORTED';
   end if;
 end;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION public.mark_order_ready(p_order_id uuid)
+
+;CREATE OR REPLACE FUNCTION public.mark_order_ready(p_order_id uuid)
  RETURNS orders
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -1356,9 +1373,10 @@ BEGIN
   PERFORM private.write_audit(v_order.business_id,'ORDER_READY','ORDER',v_order.id::text,v_before,to_jsonb(v_order),NULL);
   RETURN v_order;
 END;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION public.mark_order_station_ready(p_order_item_id uuid)
+
+;CREATE OR REPLACE FUNCTION public.mark_order_station_ready(p_order_item_id uuid)
  RETURNS order_items
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -1397,9 +1415,10 @@ BEGIN
   END IF;
   RETURN v_item;
 END;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION public.open_consumption(p_space_id uuid, p_service_mode_id uuid)
+
+;CREATE OR REPLACE FUNCTION public.open_consumption(p_space_id uuid, p_service_mode_id uuid)
  RETURNS consumptions
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -1455,9 +1474,10 @@ begin
 
   return v_consumption;
 end;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION public.open_cut(p_operator_user_id uuid DEFAULT auth.uid())
+
+;CREATE OR REPLACE FUNCTION public.open_cut(p_operator_user_id uuid DEFAULT auth.uid())
  RETURNS cuts
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -1501,9 +1521,10 @@ BEGIN
 
   RETURN v_cut;
 END;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION public.receive_order(p_order_id uuid)
+
+;CREATE OR REPLACE FUNCTION public.receive_order(p_order_id uuid)
  RETURNS orders
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -1545,9 +1566,10 @@ BEGIN
 
   RETURN v_order;
 END;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION public.receive_order_station(p_order_id uuid, p_station_id uuid)
+
+;CREATE OR REPLACE FUNCTION public.receive_order_station(p_order_id uuid, p_station_id uuid)
  RETURNS order_station_work
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -1577,9 +1599,10 @@ BEGIN
   END IF;
   RETURN v_work;
 END;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION public.receive_prepared_order(p_order_id uuid)
+
+;CREATE OR REPLACE FUNCTION public.receive_prepared_order(p_order_id uuid)
  RETURNS orders
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -1602,9 +1625,10 @@ BEGIN
   PERFORM private.write_audit(v_order.business_id,'ORDER_RECEIVED_BY_CASHIER','ORDER',v_order.id::text,v_before,to_jsonb(v_order),NULL);
   RETURN v_order;
 END;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION public.replace_order(p_order_id uuid, p_reason text, p_notes text, p_items jsonb)
+
+;CREATE OR REPLACE FUNCTION public.replace_order(p_order_id uuid, p_reason text, p_notes text, p_items jsonb)
  RETURNS orders
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -1779,9 +1803,10 @@ begin
 
   return v_replacement;
 end;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION public.request_consumption_close(p_consumption_id uuid)
+
+;CREATE OR REPLACE FUNCTION public.request_consumption_close(p_consumption_id uuid)
  RETURNS consumptions
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -1816,9 +1841,10 @@ BEGIN
   );
   RETURN v_consumption;
 END;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION public.set_order_notification_preference(p_order_id uuid, p_channel_code text, p_target text, p_is_active boolean DEFAULT true)
+
+;CREATE OR REPLACE FUNCTION public.set_order_notification_preference(p_order_id uuid, p_channel_code text, p_target text, p_is_active boolean DEFAULT true)
  RETURNS order_notification_preferences
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -1867,9 +1893,10 @@ begin
 
   return v_pref;
 end;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION public.set_order_notification_preference_updated_at()
+
+;CREATE OR REPLACE FUNCTION public.set_order_notification_preference_updated_at()
  RETURNS trigger
  LANGUAGE plpgsql
  SET search_path TO 'public', 'pg_temp'
@@ -1878,9 +1905,10 @@ begin
   new.updated_at = now();
   return new;
 end;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION public.start_order_preparation(p_order_id uuid)
+
+;CREATE OR REPLACE FUNCTION public.start_order_preparation(p_order_id uuid)
  RETURNS orders
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -1922,9 +1950,10 @@ begin
 
   return v_order;
 end;
-$function$;
+$function$
 
-CREATE OR REPLACE FUNCTION public.start_order_station_preparation(p_order_id uuid, p_station_id uuid)
+
+;CREATE OR REPLACE FUNCTION public.start_order_station_preparation(p_order_id uuid, p_station_id uuid)
  RETURNS order_station_work
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -1954,9 +1983,10 @@ BEGIN
   END IF;
   RETURN v_work;
 END;
-$function$;
+$function$
 
-CREATE TRIGGER order_items_sync_station_work AFTER INSERT ON order_items FOR EACH ROW EXECUTE FUNCTION private.sync_order_station_work();
+
+;CREATE TRIGGER order_items_sync_station_work AFTER INSERT ON order_items FOR EACH ROW EXECUTE FUNCTION private.sync_order_station_work();
 
 CREATE TRIGGER trg_order_notification_preferences_updated_at BEFORE UPDATE ON order_notification_preferences FOR EACH ROW EXECUTE FUNCTION set_order_notification_preference_updated_at();
 
