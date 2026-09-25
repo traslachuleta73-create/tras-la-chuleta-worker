@@ -170,6 +170,40 @@ export async function listActiveOrders(request, env) {
   );
 }
 
+async function resourceJson(response, label) {
+  let payload = null;
+  try { payload = await response.json(); } catch { payload = null; }
+  if (!response.ok) {
+    throw new HttpError(502, "RESOURCE_LOOKUP_FAILED", `No se pudo consultar ${label}`);
+  }
+  return payload || [];
+}
+
+export async function listOperationalCatalog(request, env) {
+  const { supabase } = await requireAuth(request, env);
+  const paths = {
+    products: "products?select=id,name,price,is_available,is_active&is_active=eq.true&order=name.asc",
+    stations: "stations?select=id,code,name,station_type,is_active&is_active=eq.true&order=name.asc",
+    productStations: "product_stations?select=product_id,station_id",
+    spaces: "spaces?select=id,name,space_type,is_active&is_active=eq.true&order=name.asc",
+    serviceModes: "service_modes?select=id,code,name,is_active&is_active=eq.true&order=name.asc",
+    paymentMethods: "business_payment_methods?select=method_code,display_name,is_enabled&is_enabled=eq.true&order=display_name.asc",
+    channels: "business_channels?select=channel_code,is_enabled&is_enabled=eq.true&order=channel_code.asc",
+  };
+  const entries = await Promise.all(Object.entries(paths).map(async ([key, path]) => [
+    key, await resourceJson(await supabase.rest(path), key),
+  ]));
+  return ok(Object.fromEntries(entries));
+}
+
+export async function listOpenConsumptions(request, env) {
+  return listRest(
+    request, env,
+    "consumptions?select=id,consumption_number,status,opened_at,space_id,service_mode_id,space:spaces(name),service_mode:service_modes(name),orders:orders(id,order_number,channel_code,status,note,created_at,items:order_items(id,product_id,station_id,quantity,unit_price,notes,product:products(id,name),station:stations(id,code,name,station_type))),payments:payments(id,status,method_code,amount,created_at,confirmed_at)&status=in.(OPEN,PENDING_CLOSE)&order=opened_at.desc&limit=100",
+    "CONSUMPTIONS_LIST_FAILED", "No se pudieron consultar los consumos abiertos",
+  );
+}
+
 export async function markStationReady(request, env) {
   const body = await readJson(request);
   return callRpc(request, env, "mark_order_station_ready", {
