@@ -16,6 +16,8 @@ import {
   markOrderReady,
   listStationOrders,
   listActiveOrders,
+  listOperationalCatalog,
+  listOpenConsumptions,
   markStationReady,
   deliverOrder,
   cancelOrder,
@@ -59,6 +61,14 @@ export async function router(request, env) {
 
   if (request.method === "GET" && path === "/api/orders/active") {
     return withCors(await listActiveOrders(request, env), request, env);
+  }
+
+  if (request.method === "GET" && path === "/api/catalog") {
+    return withCors(await listOperationalCatalog(request, env), request, env);
+  }
+
+  if (request.method === "GET" && path === "/api/consumptions/active") {
+    return withCors(await listOpenConsumptions(request, env), request, env);
   }
 
   const routes = {
