@@ -116,7 +116,7 @@ function allowedOrigins(env) {
       .split(",")
       .map((origin) => origin.trim())
       .filter(Boolean),
-    "https://tras-la-chuleta-front.pages.dev",
+    "https://tras-la-chuleta-frontend.pages.dev",
   ];
 }
 
