@@ -157,7 +157,7 @@ export async function listStationOrders(request, env) {
   const stationFilter = stationId ? `&station_id=eq.${encodeURIComponent(stationId)}` : "";
   return listRest(
     request, env,
-    `order_station_work?select=id,business_id,order_id,station_id,status,received_at,preparing_at,ready_at,station:stations(id,code,name,station_type),order:orders!inner(id,order_number,channel_code,status,note,created_at,consumption_id,items:order_items(id,product_id,station_id,quantity,unit_price,notes,ready_at,product:products(id,name)) )&status=in.(PENDING,RECEIVED,PREPARING,READY)${stationFilter}&order.status=in.(NEW,RECEIVED,PREPARING,READY_FOR_CASHIER,CASHIER_ASSEMBLING)&order=created_at.asc`,
+    `order_station_work?select=id,business_id,order_id,station_id,status,received_at,preparing_at,ready_at,station:stations(id,code,name,station_type),order:orders!inner(id,order_number,channel_code,status,note,created_at,consumption_id,items:order_items(id,product_id,station_id,quantity,unit_price,notes,ready_at,product:products(id,name)) )&status=in.(PENDING,RECEIVED,PREPARING,READY)${stationFilter}&order.status=in.(NEW,RECEIVED,PREPARING,READY_FOR_CASHIER)&order=created_at.asc`,
     "STATION_ORDERS_FAILED", "No se pudieron consultar las comandas por estación",
   );
 }
