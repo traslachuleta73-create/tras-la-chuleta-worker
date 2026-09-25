@@ -1,8 +1,13 @@
 name = "tras-la-chuleta-api-v1"
 main = "src/index.js"
 compatibility_date = "2026-09-19"
+preview_urls = true
 
 [vars]
 ENVIRONMENT = "development"
 # Lista separada por comas. Vacía por defecto: no se permite CORS cross-origin hasta configurarla.
 ALLOWED_ORIGINS = "https://traslachuleta.com"
+
+[previews.vars]
+ENVIRONMENT = "staging"
+ALLOWED_ORIGINS = "https://staging.tras-la-chuleta-frontend.pages.dev"
