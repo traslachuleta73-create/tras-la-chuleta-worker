@@ -111,10 +111,13 @@ function normalizePath(pathname) {
 }
 
 function allowedOrigins(env) {
-  return String(env?.ALLOWED_ORIGINS || "")
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter(Boolean);
+  return [
+    ...String(env?.ALLOWED_ORIGINS || "")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+    "https://tras-la-chuleta-front.pages.dev",
+  ];
 }
 
 function corsHeaders(request, env) {
