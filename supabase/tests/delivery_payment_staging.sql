@@ -11,16 +11,23 @@ DECLARE
   v_table public.consumptions;
   v_bar public.consumptions;
   v_admin_consumption public.consumptions;
+  v_multi_consumption public.consumptions;
   v_table_order public.orders;
   v_bar_order public.orders;
   v_unvalidated public.orders;
   v_admin_order public.orders;
+  v_multi_order public.orders;
   v_payment public.payments;
   v_cut public.cuts;
   v_product uuid;
   v_station uuid;
   v_station_role text;
   v_station_user uuid;
+  v_bar_station uuid;
+  v_bar_user uuid;
+  v_bar_product uuid;
+  v_cook_item uuid;
+  v_bar_item uuid;
   v_price numeric;
   v_channel text;
 BEGIN
@@ -34,6 +41,11 @@ BEGIN
     WHERE p.business_id=v_business AND p.price>0 LIMIT 1;
   SELECT id INTO STRICT v_station_user FROM public.profiles
    WHERE business_id=v_business AND role_code=v_station_role;
+  SELECT id INTO STRICT v_bar_station FROM public.stations WHERE business_id=v_business AND station_type='BARRA' LIMIT 1;
+  SELECT id INTO STRICT v_bar_user FROM public.profiles WHERE business_id=v_business AND role_code='BARRA';
+  SELECT p.id INTO STRICT v_bar_product FROM public.products p
+    JOIN public.product_stations ps ON ps.product_id=p.id AND ps.station_id=v_bar_station
+    WHERE p.business_id=v_business AND p.price>0 LIMIT 1;
   SELECT channel_code INTO STRICT v_channel FROM public.business_channels WHERE business_id=v_business AND is_enabled LIMIT 1;
   PERFORM set_config('request.jwt.claim.sub',v_waiter::text,true);
   BEGIN
@@ -57,6 +69,8 @@ BEGIN
     VALUES(v_business,'OPEN',v_mode_barra) RETURNING * INTO v_bar;
   INSERT INTO public.consumptions(business_id,status,service_mode_id)
     VALUES(v_business,'OPEN',v_mode_mesa) RETURNING * INTO v_admin_consumption;
+  INSERT INTO public.consumptions(business_id,status,service_mode_id)
+    VALUES(v_business,'OPEN',v_mode_mesa) RETURNING * INTO v_multi_consumption;
   INSERT INTO public.orders(business_id,consumption_id,channel_code,status,ready_at)
     VALUES(v_business,v_table.id,v_channel,'READY',now()) RETURNING * INTO v_table_order;
   INSERT INTO public.orders(business_id,consumption_id,channel_code,status,ready_at)
@@ -99,6 +113,29 @@ BEGIN
   PERFORM public.receive_order_station(v_admin_order.id,v_station);
   IF (SELECT status FROM public.order_station_work WHERE order_id=v_admin_order.id AND station_id=v_station) <> 'RECEIVED' THEN
     RAISE EXCEPTION 'FAIL_ADMIN_STATION_RECEIPT';
+  END IF;
+  INSERT INTO public.orders(business_id,consumption_id,channel_code,status)
+    VALUES(v_business,v_multi_consumption.id,v_channel,'NEW') RETURNING * INTO v_multi_order;
+  INSERT INTO public.order_items(order_id,product_id,station_id,quantity,unit_price)
+    VALUES(v_multi_order.id,v_product,v_station,1,v_price) RETURNING id INTO v_cook_item;
+  INSERT INTO public.order_items(order_id,product_id,station_id,quantity,unit_price)
+    SELECT v_multi_order.id,p.id,v_bar_station,1,p.price FROM public.products p WHERE p.id=v_bar_product
+    RETURNING id INTO v_bar_item;
+  PERFORM set_config('request.jwt.claim.sub',v_cashier::text,true);
+  PERFORM public.validate_order(v_multi_order.id);
+  PERFORM set_config('request.jwt.claim.sub',v_station_user::text,true);
+  PERFORM public.receive_order_station(v_multi_order.id,v_station);
+  PERFORM public.start_order_station_preparation(v_multi_order.id,v_station);
+  PERFORM public.mark_order_station_ready(v_cook_item);
+  IF (SELECT status FROM public.orders WHERE id=v_multi_order.id) = 'READY' THEN
+    RAISE EXCEPTION 'FAIL_ORDER_READY_BEFORE_BARRA';
+  END IF;
+  PERFORM set_config('request.jwt.claim.sub',v_bar_user::text,true);
+  PERFORM public.receive_order_station(v_multi_order.id,v_bar_station);
+  PERFORM public.start_order_station_preparation(v_multi_order.id,v_bar_station);
+  PERFORM public.mark_order_station_ready(v_bar_item);
+  IF (SELECT status FROM public.orders WHERE id=v_multi_order.id) <> 'READY' THEN
+    RAISE EXCEPTION 'FAIL_ORDER_NOT_READY_AFTER_ALL_STATIONS';
   END IF;
 
   PERFORM set_config('request.jwt.claim.sub',v_cashier::text,true);
