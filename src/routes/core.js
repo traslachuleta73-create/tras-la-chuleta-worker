@@ -95,6 +95,13 @@ export async function createOrder(request, env) {
   });
 }
 
+export async function validateOrder(request, env) {
+  const body = await readJson(request);
+  return callRpc(request, env, "validate_order", {
+    p_order_id: required(body, "order_id"),
+  });
+}
+
 export async function addOrderItem(request, env) {
   const body = await readJson(request);
   return callRpc(request, env, "add_order_item", {
@@ -157,7 +164,7 @@ export async function listStationOrders(request, env) {
   const stationFilter = stationId ? `&station_id=eq.${encodeURIComponent(stationId)}` : "";
   return listRest(
     request, env,
-    `order_station_work?select=id,business_id,order_id,station_id,status,received_at,preparing_at,ready_at,station:stations(id,code,name,station_type),order:orders!inner(id,order_number,channel_code,status,note,created_at,consumption_id,items:order_items(id,product_id,station_id,quantity,unit_price,notes,ready_at,product:products(id,name)) )&status=in.(PENDING,RECEIVED,PREPARING,READY)${stationFilter}&order.status=in.(NEW,RECEIVED,PREPARING,READY_FOR_CASHIER)&order=created_at.asc`,
+    `order_station_work?select=id,business_id,order_id,station_id,status,received_at,preparing_at,ready_at,station:stations(id,code,name,station_type),order:orders!inner(id,order_number,channel_code,status,note,created_at,consumption_id,items:order_items(id,product_id,station_id,quantity,unit_price,notes,ready_at,product:products(id,name)) )&status=in.(PENDING,RECEIVED,PREPARING,READY)${stationFilter}&order.status=in.(RECEIVED,PREPARING,READY_FOR_CASHIER)&order=created_at.asc`,
     "STATION_ORDERS_FAILED", "No se pudieron consultar las comandas por estación",
   );
 }
