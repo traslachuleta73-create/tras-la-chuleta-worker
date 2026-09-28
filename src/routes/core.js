@@ -457,7 +457,7 @@ export async function fichaDownloadLink(request, env) {
   const data = await response.json().catch(() => ({}));
   const signed = data.signedURL || data.signedUrl;
   if (!response.ok || !signed) throw new HttpError(502, "FICHA_DOWNLOAD_FAILED", "No se pudo generar el enlace al PDF");
-  return ok({ url: new URL(signed, base).toString() });
+  return ok({ url: signed.startsWith("http") ? signed : `${base}/storage/v1${signed}` });
 }
 
 export async function openCut(request, env) {
