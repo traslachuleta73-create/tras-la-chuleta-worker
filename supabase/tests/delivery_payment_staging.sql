@@ -25,6 +25,20 @@ BEGIN
   SELECT id, price INTO STRICT v_product, v_price FROM public.products WHERE business_id=v_business AND price>0 LIMIT 1;
   SELECT id INTO STRICT v_station FROM public.stations WHERE business_id=v_business LIMIT 1;
   SELECT channel_code INTO STRICT v_channel FROM public.business_channels WHERE business_id=v_business AND is_enabled LIMIT 1;
+  PERFORM set_config('request.jwt.claim.sub',v_waiter::text,true);
+  BEGIN
+    PERFORM public.open_consumption(NULL,NULL);
+    RAISE EXCEPTION 'FAIL_MESERO_OPENED_CONSUMPTION';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM <> 'ROLE_NOT_ALLOWED' THEN RAISE; END IF;
+  END;
+  PERFORM set_config('request.jwt.claim.sub',v_cashier::text,true);
+  BEGIN
+    PERFORM public.open_consumption(NULL,NULL);
+    RAISE EXCEPTION 'FAIL_CONSUMPTION_WITHOUT_MODE';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM <> 'SERVICE_MODE_NOT_AVAILABLE' THEN RAISE; END IF;
+  END;
   INSERT INTO public.service_modes(business_id,code,name) VALUES(v_business,'MESA','Mesa prueba') RETURNING id INTO v_mode_mesa;
   INSERT INTO public.service_modes(business_id,code,name) VALUES(v_business,'BARRA','Barra prueba') RETURNING id INTO v_mode_barra;
   INSERT INTO public.consumptions(business_id,status,service_mode_id)
