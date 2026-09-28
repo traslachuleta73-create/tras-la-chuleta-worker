@@ -10,10 +10,13 @@ DECLARE
   v_mode_barra uuid;
   v_table public.consumptions;
   v_bar public.consumptions;
+  v_admin_consumption public.consumptions;
   v_table_order public.orders;
   v_bar_order public.orders;
   v_unvalidated public.orders;
+  v_admin_order public.orders;
   v_payment public.payments;
+  v_cut public.cuts;
   v_product uuid;
   v_station uuid;
   v_station_role text;
@@ -25,8 +28,10 @@ BEGIN
   SELECT id INTO STRICT v_cashier FROM public.profiles WHERE business_id=v_business AND role_code='CAJA';
   SELECT id INTO STRICT v_waiter FROM public.profiles WHERE business_id=v_business AND role_code='MESERO';
   SELECT id INTO STRICT v_admin FROM public.profiles WHERE business_id=v_business AND role_code='ADMIN';
-  SELECT id, price INTO STRICT v_product, v_price FROM public.products WHERE business_id=v_business AND price>0 LIMIT 1;
-  SELECT id,station_type INTO STRICT v_station,v_station_role FROM public.stations WHERE business_id=v_business LIMIT 1;
+  SELECT id,station_type INTO STRICT v_station,v_station_role FROM public.stations WHERE business_id=v_business AND station_type='COCINA' LIMIT 1;
+  SELECT p.id,p.price INTO STRICT v_product,v_price FROM public.products p
+    JOIN public.product_stations ps ON ps.product_id=p.id AND ps.station_id=v_station
+    WHERE p.business_id=v_business AND p.price>0 LIMIT 1;
   SELECT id INTO STRICT v_station_user FROM public.profiles
    WHERE business_id=v_business AND role_code=v_station_role;
   SELECT channel_code INTO STRICT v_channel FROM public.business_channels WHERE business_id=v_business AND is_enabled LIMIT 1;
@@ -50,6 +55,8 @@ BEGIN
     VALUES(v_business,'OPEN',v_mode_mesa) RETURNING * INTO v_table;
   INSERT INTO public.consumptions(business_id,status,service_mode_id)
     VALUES(v_business,'OPEN',v_mode_barra) RETURNING * INTO v_bar;
+  INSERT INTO public.consumptions(business_id,status,service_mode_id)
+    VALUES(v_business,'OPEN',v_mode_mesa) RETURNING * INTO v_admin_consumption;
   INSERT INTO public.orders(business_id,consumption_id,channel_code,status,ready_at)
     VALUES(v_business,v_table.id,v_channel,'READY',now()) RETURNING * INTO v_table_order;
   INSERT INTO public.orders(business_id,consumption_id,channel_code,status,ready_at)
@@ -81,6 +88,17 @@ BEGIN
   PERFORM public.receive_order_station(v_unvalidated.id,v_station);
   IF (SELECT status FROM public.orders WHERE id=v_unvalidated.id) <> 'RECEIVED' THEN
     RAISE EXCEPTION 'FAIL_VALIDATED_ORDER_STATE';
+  END IF;
+  INSERT INTO public.orders(business_id,consumption_id,channel_code,status)
+    VALUES(v_business,v_admin_consumption.id,v_channel,'NEW') RETURNING * INTO v_admin_order;
+  INSERT INTO public.order_items(order_id,product_id,station_id,quantity,unit_price)
+    VALUES(v_admin_order.id,v_product,v_station,1,v_price);
+  PERFORM set_config('request.jwt.claim.sub',v_cashier::text,true);
+  PERFORM public.validate_order(v_admin_order.id);
+  PERFORM set_config('request.jwt.claim.sub',v_admin::text,true);
+  PERFORM public.receive_order_station(v_admin_order.id,v_station);
+  IF (SELECT status FROM public.order_station_work WHERE order_id=v_admin_order.id AND station_id=v_station) <> 'RECEIVED' THEN
+    RAISE EXCEPTION 'FAIL_ADMIN_STATION_RECEIPT';
   END IF;
 
   PERFORM set_config('request.jwt.claim.sub',v_cashier::text,true);
@@ -127,7 +145,13 @@ BEGIN
   EXCEPTION WHEN OTHERS THEN
     IF SQLERRM <> 'CONSUMPTION_NOT_OPEN' THEN RAISE; END IF;
   END;
-  RAISE NOTICE 'PASS: entrega por modalidad, bloqueo cobro prematuro, rol Caja, cierre automático, consumo cerrado';
+  INSERT INTO public.cuts(business_id,status,opened_at,operator_user_id)
+    VALUES(v_business,'OPEN',now() - interval '1 hour',v_cashier) RETURNING * INTO v_cut;
+  PERFORM public.execute_cut(v_cut.id,'{}'::jsonb);
+  IF (SELECT status FROM public.cuts WHERE id=v_cut.id) <> 'EXECUTED' THEN
+    RAISE EXCEPTION 'FAIL_CAJA_EXECUTED_CUT';
+  END IF;
+  RAISE NOTICE 'PASS: cocina, admin estación, entrega, cobro, cierre y corte Caja';
 END;
 $test$;
 ROLLBACK;
