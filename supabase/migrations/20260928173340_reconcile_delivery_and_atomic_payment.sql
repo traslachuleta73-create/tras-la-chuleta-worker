@@ -30,6 +30,74 @@ BEGIN
 END;
 $function$;
 
+-- Solo CAJA libera el pedido estructurado a sus estaciones.
+CREATE OR REPLACE FUNCTION public.validate_order(p_order_id uuid)
+RETURNS public.orders
+LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $function$
+DECLARE
+  v_order public.orders;
+  v_before jsonb;
+BEGIN
+  IF private.current_role_code() <> 'CAJA' THEN RAISE EXCEPTION 'ROLE_NOT_ALLOWED'; END IF;
+  SELECT * INTO v_order FROM public.orders
+   WHERE id=p_order_id AND business_id=private.current_business_id() FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'ORDER_NOT_FOUND'; END IF;
+  IF v_order.status <> 'NEW' THEN RAISE EXCEPTION 'INVALID_ORDER_STATE'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.consumptions
+                  WHERE id=v_order.consumption_id AND business_id=v_order.business_id AND status='OPEN') THEN
+    RAISE EXCEPTION 'CONSUMPTION_NOT_OPEN';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.order_items WHERE order_id=v_order.id) THEN
+    RAISE EXCEPTION 'ORDER_HAS_NO_ITEMS';
+  END IF;
+  v_before := to_jsonb(v_order);
+  UPDATE public.orders SET status='RECEIVED',received_at=now(),updated_at=now()
+   WHERE id=v_order.id AND business_id=v_order.business_id RETURNING * INTO v_order;
+  PERFORM private.write_audit(v_order.business_id,'ORDER_VALIDATED_BY_CASHIER',
+                              'ORDER',v_order.id::text,v_before,to_jsonb(v_order),NULL);
+  RETURN v_order;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.receive_order_station(p_order_id uuid,p_station_id uuid)
+RETURNS public.order_station_work
+LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $function$
+DECLARE
+  v_business uuid := private.current_business_id();
+  v_order public.orders;
+  v_work public.order_station_work;
+  v_station public.stations;
+  v_before jsonb;
+BEGIN
+  SELECT * INTO v_order FROM public.orders
+   WHERE id=p_order_id AND business_id=v_business FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'ORDER_NOT_FOUND'; END IF;
+  IF v_order.status NOT IN ('RECEIVED','PREPARING') THEN
+    RAISE EXCEPTION 'ORDER_AWAITS_CASHIER_VALIDATION';
+  END IF;
+  SELECT * INTO v_work FROM public.order_station_work
+   WHERE order_id=p_order_id AND station_id=p_station_id AND business_id=v_business FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'ORDER_STATION_NOT_FOUND'; END IF;
+  SELECT * INTO v_station FROM public.stations
+   WHERE id=p_station_id AND business_id=v_business AND is_active;
+  IF NOT FOUND THEN RAISE EXCEPTION 'STATION_NOT_AVAILABLE'; END IF;
+  IF private.current_role_code() <> v_station.station_type THEN
+    RAISE EXCEPTION 'STATION_NOT_ALLOWED';
+  END IF;
+  IF v_work.status <> 'PENDING' THEN RAISE EXCEPTION 'INVALID_STATION_STATE'; END IF;
+  v_before := to_jsonb(v_work);
+  UPDATE public.order_station_work
+     SET status='RECEIVED',received_at=now(),received_by=auth.uid(),updated_at=now()
+   WHERE id=v_work.id RETURNING * INTO v_work;
+  PERFORM private.write_audit(v_business,'ORDER_STATION_RECEIVED',
+                              'ORDER_STATION_WORK',v_work.id::text,
+                              v_before,to_jsonb(v_work),NULL);
+  RETURN v_work;
+END;
+$function$;
+
 CREATE OR REPLACE FUNCTION public.deliver_order(p_order_id uuid)
 RETURNS public.orders
 LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
@@ -188,12 +256,16 @@ END;
 $function$;
 
 REVOKE ALL ON FUNCTION public.deliver_order(uuid) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.validate_order(uuid) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.receive_order_station(uuid,uuid) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.open_consumption(uuid,uuid) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.create_payment(uuid,text,numeric,text) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.confirm_payment(uuid) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.request_consumption_close(uuid) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.close_consumption(uuid) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.deliver_order(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.validate_order(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.receive_order_station(uuid,uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.open_consumption(uuid,uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_payment(uuid,text,numeric,text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.confirm_payment(uuid) TO authenticated;
