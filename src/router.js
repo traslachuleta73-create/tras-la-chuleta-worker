@@ -24,6 +24,8 @@ import {
   createPayment,
   confirmPayment,
   listCuts,
+  listAdminOverview,
+  deactivateUser,
   openCut,
   executeCut,
   setOrderNotificationPreference,
@@ -52,6 +54,10 @@ export async function router(request, env) {
 
   if (request.method === "GET" && path === "/api/cuts") {
     return withCors(await listCuts(request, env), request, env);
+  }
+
+  if (request.method === "GET" && path === "/api/admin/overview") {
+    return withCors(await listAdminOverview(request, env), request, env);
   }
 
   if (request.method === "GET" && path === "/api/station-orders") {
@@ -88,6 +94,7 @@ export async function router(request, env) {
     "/api/payments/confirm": confirmPayment,
     "/api/cuts/open": openCut,
     "/api/cuts/execute": executeCut,
+    "/api/admin/users/deactivate": deactivateUser,
     "/api/orders/notification-preference": setOrderNotificationPreference,
     "/api/print": printDocument,
   };
