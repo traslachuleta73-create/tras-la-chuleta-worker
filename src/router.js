@@ -26,6 +26,15 @@ import {
   listCuts,
   listAdminOverview,
   deactivateUser,
+  editUser,
+  createBusinessUser,
+  recordRefund,
+  voidDeliveredOrder,
+  setServiceModeEnabled,
+  updateProductConfig,
+  approveFicha,
+  uploadFicha,
+  fichaDownloadLink,
   openCut,
   executeCut,
   setOrderNotificationPreference,
@@ -58,6 +67,14 @@ export async function router(request, env) {
 
   if (request.method === "GET" && path === "/api/admin/overview") {
     return withCors(await listAdminOverview(request, env), request, env);
+  }
+
+  if (request.method === "GET" && path === "/api/fichas/download") {
+    return withCors(await fichaDownloadLink(request, env), request, env);
+  }
+
+  if (request.method === "POST" && path === "/api/platform/fichas") {
+    return withCors(await uploadFicha(request, env), request, env);
   }
 
   if (request.method === "GET" && path === "/api/station-orders") {
@@ -95,6 +112,13 @@ export async function router(request, env) {
     "/api/cuts/open": openCut,
     "/api/cuts/execute": executeCut,
     "/api/admin/users/deactivate": deactivateUser,
+    "/api/admin/users/edit": editUser,
+    "/api/admin/users/create": createBusinessUser,
+    "/api/admin/refunds": recordRefund,
+    "/api/admin/orders/void-delivered": voidDeliveredOrder,
+    "/api/admin/service-modes": setServiceModeEnabled,
+    "/api/admin/products": updateProductConfig,
+    "/api/fichas/approve": approveFicha,
     "/api/orders/notification-preference": setOrderNotificationPreference,
     "/api/print": printDocument,
   };
