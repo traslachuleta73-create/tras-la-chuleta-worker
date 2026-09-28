@@ -1,4 +1,5 @@
 import { requireAuth } from "../auth.js";
+import { requireRole } from "../context.js";
 import { HttpError } from "../errors.js";
 import { ok } from "../response.js";
 
@@ -270,6 +271,26 @@ export async function listCuts(request, env) {
   }
 
   return ok(payload);
+}
+
+export async function listAdminOverview(request, env) {
+  const { supabase, context } = await requireAuth(request, env);
+  requireRole(context, ["ADMIN"]);
+  const [users, audit] = await Promise.all([
+    resourceJson(await supabase.rest("profiles?select=id,display_name,role_code,city,distinctive,is_active,created_at&order=role_code.asc,display_name.asc"), "usuarios"),
+    resourceJson(await supabase.rest("audit_log?select=id,actor_user_id,action,entity_type,entity_id,occurred_at,reason&order=occurred_at.desc&limit=100"), "auditoría"),
+  ]);
+  return ok({ users, audit });
+}
+
+export async function deactivateUser(request, env) {
+  const { context } = await requireAuth(request, env);
+  requireRole(context, ["ADMIN"]);
+  const body = await readJson(request);
+  return callRpc(request, env, "deactivate_business_user", {
+    p_user_id: required(body, "user_id"),
+    p_reason: required(body, "reason"),
+  });
 }
 
 export async function openCut(request, env) {
