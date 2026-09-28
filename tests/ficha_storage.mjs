@@ -22,7 +22,7 @@ globalThis.fetch = async (input, init = {}) => {
   if (url.pathname === '/rest/v1/business_ficha_versions') return json([{
     id: 'ficha-id', document_path: `${businessId}/1.pdf`, client_approved: true, tlc_approved: true,
   }])
-  if (url.pathname === `/storage/v1/object/sign/fichas/${businessId}/1.pdf`) return json({ signedURL: `/storage/v1/object/sign/fichas/${businessId}/1.pdf?token=temporary` })
+  if (url.pathname === `/storage/v1/object/sign/fichas/${businessId}/1.pdf`) return json({ signedURL: `/object/sign/fichas/${businessId}/1.pdf?token=temporary` })
   throw new Error(`Unexpected request: ${url.pathname}`)
 }
 
@@ -46,7 +46,7 @@ try {
   const downloaded = await fichaDownloadLink(new Request('https://worker.example/api/fichas/download?ficha_id=ficha-id', {
     headers: { authorization: 'Bearer test-token' },
   }), env)
-  assert.match((await downloaded.json()).data.url, /token=temporary/)
+  assert.match((await downloaded.json()).data.url, /\/storage\/v1\/object\/sign\/fichas\/.+token=temporary/)
 
   platform = false
   calls.length = 0
