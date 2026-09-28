@@ -7,7 +7,7 @@ Esqueleto inicial del Worker nuevo. No reutiliza el Worker V51.
 - El Worker valida autenticación y contexto de usuario.
 - BUSINESS es el límite de aislamiento.
 - Supabase/RLS y RPC son la autoridad de datos y operaciones críticas.
-- No se usa `SUPABASE_SERVICE_ROLE_KEY` en esta versión.
+- Los flujos de alta de usuarios y PDF de Ficha Técnica usan `SUPABASE_SECRET_KEY` solo en el Worker.
 - No hay escrituras directas a tablas operativas.
 - Las operaciones críticas llaman RPC autorizadas.
 
@@ -16,8 +16,11 @@ Configurar con Wrangler Secrets:
 
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
+- `SUPABASE_SECRET_KEY` para alta de usuarios y PDF de Ficha Técnica; sin ella esas funciones quedan deshabilitadas.
 
 Nunca guardar secretos en Git.
+
+La cuenta de Tras La Chuleta autorizada para crear y aprobar Fichas como plataforma debe ser designada en `public.platform_operators` mediante una operación administrativa de base de datos. Un `ADMIN` de negocio no adquiere esa facultad automáticamente. La aprobación del cliente requiere otra cuenta `ADMIN` del BUSINESS. El PDF se guarda en el bucket privado `fichas`; el Worker entrega enlaces de descarga temporales solo a `ADMIN` y `CAJA` cuando la versión está aprobada por ambas partes.
 
 ## CORS
 
