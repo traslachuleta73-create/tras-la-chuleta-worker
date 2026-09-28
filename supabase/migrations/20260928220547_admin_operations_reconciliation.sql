@@ -22,17 +22,21 @@ BEGIN
 END;
 $function$;
 
-CREATE OR REPLACE FUNCTION public.attach_business_user(p_user_id uuid,p_display_name text,
+CREATE OR REPLACE FUNCTION public.attach_business_user(p_user_id uuid,p_email text,p_display_name text,
   p_role_code text,p_city text,p_distinctive text)
 RETURNS public.profiles LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public','private','pg_temp'
 AS $function$
 DECLARE v_business uuid:=private.current_business_id(); v_profile public.profiles;
+  v_auth_email text; v_auth_created_at timestamptz;
 BEGIN
   IF private.current_role_code()<>'ADMIN' THEN RAISE EXCEPTION 'ROLE_NOT_ALLOWED'; END IF;
   IF NULLIF(trim(p_display_name),'') IS NULL OR NULLIF(trim(p_city),'') IS NULL THEN
     RAISE EXCEPTION 'REQUIRED_FIELD_MISSING'; END IF;
   IF NOT EXISTS(SELECT 1 FROM public.roles WHERE code=p_role_code) THEN RAISE EXCEPTION 'INVALID_ROLE'; END IF;
-  IF NOT EXISTS(SELECT 1 FROM auth.users WHERE id=p_user_id) THEN RAISE EXCEPTION 'AUTH_USER_NOT_FOUND'; END IF;
+  SELECT email,created_at INTO v_auth_email,v_auth_created_at FROM auth.users WHERE id=p_user_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'AUTH_USER_NOT_FOUND'; END IF;
+  IF lower(v_auth_email)<>lower(trim(p_email)) OR v_auth_created_at<now()-interval '2 minutes' THEN
+    RAISE EXCEPTION 'AUTH_USER_NOT_RECENT'; END IF;
   IF EXISTS(SELECT 1 FROM public.profiles WHERE id=p_user_id) THEN RAISE EXCEPTION 'USER_ALREADY_ASSIGNED'; END IF;
   INSERT INTO public.profiles(id,business_id,role_code,city,distinctive,display_name,is_active)
     VALUES(p_user_id,v_business,p_role_code,trim(p_city),NULLIF(trim(p_distinctive),''),trim(p_display_name),true)
@@ -131,12 +135,12 @@ END;
 $function$;
 
 REVOKE ALL ON FUNCTION public.edit_business_user(uuid,text,text,text,text,text) FROM PUBLIC,anon;
-REVOKE ALL ON FUNCTION public.attach_business_user(uuid,text,text,text,text) FROM PUBLIC,anon;
+REVOKE ALL ON FUNCTION public.attach_business_user(uuid,text,text,text,text,text) FROM PUBLIC,anon;
 REVOKE ALL ON FUNCTION public.record_payment_refund(uuid,numeric,text,text) FROM PUBLIC,anon;
 REVOKE ALL ON FUNCTION public.void_delivered_order(uuid,text) FROM PUBLIC,anon;
 REVOKE ALL ON FUNCTION public.set_service_mode_enabled(text,boolean,text) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.edit_business_user(uuid,text,text,text,text,text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.attach_business_user(uuid,text,text,text,text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.attach_business_user(uuid,text,text,text,text,text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.record_payment_refund(uuid,numeric,text,text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.void_delivered_order(uuid,text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.set_service_mode_enabled(text,boolean,text) TO authenticated;
