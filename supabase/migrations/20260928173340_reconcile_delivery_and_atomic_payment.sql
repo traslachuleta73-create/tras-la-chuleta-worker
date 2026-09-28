@@ -1,6 +1,35 @@
 -- Matriz Maestra CONSOLIDADA_CORREGIDA v7: entrega por modalidad y cierre atómico.
 -- La modalidad se configura por BUSINESS; un consumo sin modalidad no puede entregarse.
 
+CREATE OR REPLACE FUNCTION public.open_consumption(p_space_id uuid, p_service_mode_id uuid)
+RETURNS public.consumptions
+LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $function$
+DECLARE
+  v_business uuid := private.current_business_id();
+  v_consumption public.consumptions;
+BEGIN
+  IF private.current_role_code() NOT IN ('ADMIN', 'CAJA') THEN
+    RAISE EXCEPTION 'ROLE_NOT_ALLOWED';
+  END IF;
+  IF p_space_id IS NOT NULL AND NOT EXISTS
+    (SELECT 1 FROM public.spaces s WHERE s.id=p_space_id AND s.business_id=v_business AND s.is_active) THEN
+    RAISE EXCEPTION 'SPACE_NOT_AVAILABLE';
+  END IF;
+  IF p_service_mode_id IS NULL OR NOT EXISTS
+    (SELECT 1 FROM public.service_modes sm
+      WHERE sm.id=p_service_mode_id AND sm.business_id=v_business AND sm.is_active) THEN
+    RAISE EXCEPTION 'SERVICE_MODE_NOT_AVAILABLE';
+  END IF;
+  INSERT INTO public.consumptions(business_id,space_id,service_mode_id,status,created_by)
+  VALUES(v_business,p_space_id,p_service_mode_id,'OPEN',auth.uid())
+  RETURNING * INTO v_consumption;
+  PERFORM private.write_audit(v_business,'CONSUMPTION_OPENED','CONSUMPTION',
+                              v_consumption.id::text,NULL,to_jsonb(v_consumption),NULL);
+  RETURN v_consumption;
+END;
+$function$;
+
 CREATE OR REPLACE FUNCTION public.deliver_order(p_order_id uuid)
 RETURNS public.orders
 LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
@@ -159,10 +188,12 @@ END;
 $function$;
 
 REVOKE ALL ON FUNCTION public.deliver_order(uuid) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.open_consumption(uuid,uuid) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.create_payment(uuid,text,numeric,text) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.confirm_payment(uuid) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.request_consumption_close(uuid) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.close_consumption(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.deliver_order(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.open_consumption(uuid,uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_payment(uuid,text,numeric,text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.confirm_payment(uuid) TO authenticated;
