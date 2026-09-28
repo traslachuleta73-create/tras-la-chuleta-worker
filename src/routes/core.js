@@ -460,6 +460,14 @@ export async function fichaDownloadLink(request, env) {
   return ok({ url: signed.startsWith("http") ? signed : `${base}/storage/v1${signed}` });
 }
 
+export async function listFichaVersions(request, env) {
+  const { supabase, context } = await requireAuth(request, env);
+  requireRole(context, ["ADMIN", "CAJA"]);
+  return ok(await resourceJson(await supabase.rest(
+    "business_ficha_versions?select=id,version,tlc_approved,client_approved,created_at&order=version.desc&limit=20",
+  ), "Ficha Técnica"));
+}
+
 export async function openCut(request, env) {
   const body = await readJson(request);
   const args = {};
