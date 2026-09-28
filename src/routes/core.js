@@ -129,20 +129,6 @@ export async function startPreparation(request, env) {
   });
 }
 
-export async function receivePreparedOrder(request, env) {
-  const body = await readJson(request);
-  return callRpc(request, env, "receive_prepared_order", {
-    p_order_id: required(body, "order_id"),
-  });
-}
-
-export async function markOrderReady(request, env) {
-  const body = await readJson(request);
-  return callRpc(request, env, "mark_order_ready", {
-    p_order_id: required(body, "order_id"),
-  });
-}
-
 async function listRest(request, env, path, errorCode, errorMessage) {
   const { supabase } = await requireAuth(request, env);
   const response = await supabase.rest(path);
