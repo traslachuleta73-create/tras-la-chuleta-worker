@@ -12,9 +12,12 @@ DECLARE
   v_bar public.consumptions;
   v_table_order public.orders;
   v_bar_order public.orders;
+  v_unvalidated public.orders;
   v_payment public.payments;
   v_product uuid;
   v_station uuid;
+  v_station_role text;
+  v_station_user uuid;
   v_price numeric;
   v_channel text;
 BEGIN
@@ -23,7 +26,9 @@ BEGIN
   SELECT id INTO STRICT v_waiter FROM public.profiles WHERE business_id=v_business AND role_code='MESERO';
   SELECT id INTO STRICT v_admin FROM public.profiles WHERE business_id=v_business AND role_code='ADMIN';
   SELECT id, price INTO STRICT v_product, v_price FROM public.products WHERE business_id=v_business AND price>0 LIMIT 1;
-  SELECT id INTO STRICT v_station FROM public.stations WHERE business_id=v_business LIMIT 1;
+  SELECT id,station_type INTO STRICT v_station,v_station_role FROM public.stations WHERE business_id=v_business LIMIT 1;
+  SELECT id INTO STRICT v_station_user FROM public.profiles
+   WHERE business_id=v_business AND role_code=v_station_role;
   SELECT channel_code INTO STRICT v_channel FROM public.business_channels WHERE business_id=v_business AND is_enabled LIMIT 1;
   PERFORM set_config('request.jwt.claim.sub',v_waiter::text,true);
   BEGIN
@@ -52,6 +57,31 @@ BEGIN
   INSERT INTO public.order_items(order_id,product_id,station_id,quantity,unit_price,ready_at)
     VALUES(v_table_order.id,v_product,v_station,1,v_price,now()),
           (v_bar_order.id,v_product,v_station,1,v_price,now());
+  INSERT INTO public.orders(business_id,consumption_id,channel_code,status)
+    VALUES(v_business,v_bar.id,v_channel,'NEW') RETURNING * INTO v_unvalidated;
+  INSERT INTO public.order_items(order_id,product_id,station_id,quantity,unit_price)
+    VALUES(v_unvalidated.id,v_product,v_station,1,v_price);
+  PERFORM set_config('request.jwt.claim.sub',v_station_user::text,true);
+  BEGIN
+    PERFORM public.receive_order_station(v_unvalidated.id,v_station);
+    RAISE EXCEPTION 'FAIL_STATION_RECEIVED_BEFORE_CAJA';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM <> 'ORDER_AWAITS_CASHIER_VALIDATION' THEN RAISE; END IF;
+  END;
+  PERFORM set_config('request.jwt.claim.sub',v_waiter::text,true);
+  BEGIN
+    PERFORM public.validate_order(v_unvalidated.id);
+    RAISE EXCEPTION 'FAIL_MESERO_VALIDATED_ORDER';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM <> 'ROLE_NOT_ALLOWED' THEN RAISE; END IF;
+  END;
+  PERFORM set_config('request.jwt.claim.sub',v_cashier::text,true);
+  PERFORM public.validate_order(v_unvalidated.id);
+  PERFORM set_config('request.jwt.claim.sub',v_station_user::text,true);
+  PERFORM public.receive_order_station(v_unvalidated.id,v_station);
+  IF (SELECT status FROM public.orders WHERE id=v_unvalidated.id) <> 'RECEIVED' THEN
+    RAISE EXCEPTION 'FAIL_VALIDATED_ORDER_STATE';
+  END IF;
 
   PERFORM set_config('request.jwt.claim.sub',v_cashier::text,true);
   BEGIN
