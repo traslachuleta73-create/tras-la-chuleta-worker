@@ -35,6 +35,7 @@ import {
   approveFicha,
   uploadFicha,
   fichaDownloadLink,
+  listFichaVersions,
   openCut,
   executeCut,
   setOrderNotificationPreference,
@@ -71,6 +72,10 @@ export async function router(request, env) {
 
   if (request.method === "GET" && path === "/api/fichas/download") {
     return withCors(await fichaDownloadLink(request, env), request, env);
+  }
+
+  if (request.method === "GET" && path === "/api/fichas") {
+    return withCors(await listFichaVersions(request, env), request, env);
   }
 
   if (request.method === "POST" && path === "/api/platform/fichas") {
