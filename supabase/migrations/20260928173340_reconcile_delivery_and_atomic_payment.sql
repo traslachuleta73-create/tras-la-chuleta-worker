@@ -381,3 +381,45 @@ begin
   return v_cut;
 end;
 $function$;
+-- LISTO global se alcanza al terminar todas las partes requeridas.
+CREATE OR REPLACE FUNCTION public.mark_order_station_ready(p_order_item_id uuid)
+RETURNS public.order_items
+LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public','private','pg_temp'
+AS $function$
+DECLARE v_item public.order_items; v_order public.orders; v_work public.order_station_work; v_station public.stations;
+  v_order_id uuid; v_before_item jsonb; v_before_work jsonb; v_before_order jsonb;
+BEGIN
+  SELECT order_id INTO v_order_id FROM public.order_items WHERE id=p_order_item_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'ORDER_ITEM_NOT_FOUND'; END IF;
+  SELECT * INTO v_order FROM public.orders WHERE id=v_order_id AND business_id=private.current_business_id() FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'ORDER_NOT_FOUND'; END IF;
+  SELECT * INTO v_item FROM public.order_items WHERE id=p_order_item_id AND order_id=v_order.id FOR UPDATE;
+  SELECT * INTO v_work FROM public.order_station_work WHERE order_id=v_order.id AND station_id=v_item.station_id AND business_id=v_order.business_id FOR UPDATE;
+  SELECT * INTO v_station FROM public.stations WHERE id=v_item.station_id AND business_id=v_order.business_id;
+
+  IF private.current_role_code() NOT IN ('ADMIN','COCINA','BARRA') THEN RAISE EXCEPTION 'ROLE_NOT_ALLOWED'; END IF;
+  IF private.current_role_code()<>'ADMIN' AND v_station.station_type<>private.current_role_code() THEN RAISE EXCEPTION 'STATION_NOT_ALLOWED'; END IF;
+  IF v_order.status<>'PREPARING' OR v_work.status<>'PREPARING' THEN RAISE EXCEPTION 'INVALID_STATION_STATE'; END IF;
+  IF v_item.ready_at IS NOT NULL THEN RAISE EXCEPTION 'ORDER_ITEM_ALREADY_READY'; END IF;
+
+  v_before_item:=to_jsonb(v_item);
+  UPDATE public.order_items SET ready_at=now(),ready_by=auth.uid() WHERE id=p_order_item_id RETURNING * INTO v_item;
+  PERFORM private.write_audit(v_order.business_id,'ORDER_ITEM_READY','ORDER_ITEM',v_item.id::text,v_before_item,to_jsonb(v_item),NULL);
+
+  IF NOT EXISTS(SELECT 1 FROM public.order_items WHERE order_id=v_order.id AND station_id=v_item.station_id AND ready_at IS NULL) THEN
+    v_before_work:=to_jsonb(v_work);
+    UPDATE public.order_station_work SET status='READY',ready_at=now(),ready_by=auth.uid(),updated_at=now() WHERE id=v_work.id RETURNING * INTO v_work;
+    PERFORM private.write_audit(v_order.business_id,'ORDER_STATION_READY','ORDER_STATION_WORK',v_work.id::text,v_before_work,to_jsonb(v_work),NULL);
+  END IF;
+
+  IF NOT EXISTS(SELECT 1 FROM public.order_station_work WHERE order_id=v_order.id AND business_id=v_order.business_id AND status<>'READY') THEN
+    v_before_order:=to_jsonb(v_order);
+    UPDATE public.orders SET status='READY',ready_at=now(),ready_by=auth.uid(),updated_at=now() WHERE id=v_order.id RETURNING * INTO v_order;
+    PERFORM private.write_audit(v_order.business_id,'ORDER_READY','ORDER',v_order.id::text,v_before_order,to_jsonb(v_order),NULL);
+  END IF;
+  RETURN v_item;
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.receive_prepared_order(uuid) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.mark_order_ready(uuid) FROM PUBLIC, anon, authenticated;
