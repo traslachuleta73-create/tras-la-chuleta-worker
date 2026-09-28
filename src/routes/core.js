@@ -199,7 +199,7 @@ export async function listOperationalCatalog(request, env) {
 export async function listOpenConsumptions(request, env) {
   return listRest(
     request, env,
-    "consumptions?select=id,consumption_number,status,opened_at,space_id,service_mode_id,space:spaces(name),service_mode:service_modes(name),orders:orders(id,order_number,channel_code,status,note,created_at,items:order_items(id,product_id,station_id,quantity,unit_price,notes,product:products(id,name),station:stations(id,code,name,station_type))),payments:payments(id,status,method_code,amount,created_at,confirmed_at)&status=in.(OPEN,PENDING_CLOSE)&order=opened_at.desc&limit=100",
+    "consumptions?select=id,consumption_number,status,opened_at,space_id,service_mode_id,space:spaces(name),service_mode:service_modes(name,code),orders:orders(id,order_number,channel_code,status,note,created_at,items:order_items(id,product_id,station_id,quantity,unit_price,notes,product:products(id,name),station:stations(id,code,name,station_type))),payments:payments(id,status,method_code,amount,created_at,confirmed_at)&status=in.(OPEN,PENDING_CLOSE)&order=opened_at.desc&limit=100",
     "CONSUMPTIONS_LIST_FAILED", "No se pudieron consultar los consumos abiertos",
   );
 }
