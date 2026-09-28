@@ -37,6 +37,7 @@ try {
   assert.equal((await response.json()).data.business_id, 'business-A')
   const attached = calls.find(call => call.path.endsWith('attach_business_user'))
   assert.equal(JSON.parse(attached.init.body).p_role_code, 'COCINA')
+  assert.equal(JSON.parse(attached.init.body).p_email, 'cocina@prueba.mx')
   assert.equal(attached.init.headers.Authorization, 'Bearer test-token')
 
   calls.length = 0
