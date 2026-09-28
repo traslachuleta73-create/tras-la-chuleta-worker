@@ -83,7 +83,8 @@ BEGIN
   SELECT * INTO v_station FROM public.stations
    WHERE id=p_station_id AND business_id=v_business AND is_active;
   IF NOT FOUND THEN RAISE EXCEPTION 'STATION_NOT_AVAILABLE'; END IF;
-  IF private.current_role_code() <> v_station.station_type THEN
+  IF private.current_role_code() <> 'ADMIN'
+     AND private.current_role_code() <> v_station.station_type THEN
     RAISE EXCEPTION 'STATION_NOT_ALLOWED';
   END IF;
   IF v_work.status <> 'PENDING' THEN RAISE EXCEPTION 'INVALID_STATION_STATE'; END IF;
@@ -269,3 +270,114 @@ GRANT EXECUTE ON FUNCTION public.receive_order_station(uuid,uuid) TO authenticat
 GRANT EXECUTE ON FUNCTION public.open_consumption(uuid,uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_payment(uuid,text,numeric,text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.confirm_payment(uuid) TO authenticated;
+-- La matriz permite a ADMIN y CAJA ejecutar el corte; conserva su cierre inmutable.
+CREATE OR REPLACE FUNCTION public.execute_cut(p_cut_id uuid, p_totals jsonb)
+ RETURNS cuts
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'private', 'pg_temp'
+AS $function$
+declare
+  v_cut public.cuts;
+  v_before jsonb;
+  v_executed_at timestamptz := now();
+  v_total numeric;
+  v_payment_count integer;
+  v_by_method jsonb;
+  v_consumptions jsonb;
+  v_totals jsonb;
+begin
+  select * into v_cut
+  from public.cuts
+  where id = p_cut_id
+    and business_id = private.current_business_id()
+  for update;
+
+  if not found then
+    raise exception 'CUT_NOT_FOUND';
+  end if;
+
+  if private.current_role_code() not in ('ADMIN','CAJA') then
+    raise exception 'ROLE_NOT_ALLOWED';
+  end if;
+
+  if v_cut.status <> 'OPEN' then
+    raise exception 'CUT_ALREADY_EXECUTED';
+  end if;
+
+  if v_cut.operator_user_id is null then
+    raise exception 'CUT_OPERATOR_REQUIRED';
+  end if;
+
+  select coalesce(sum(p.amount),0), count(*)
+  into v_total, v_payment_count
+  from public.payments p
+  where p.business_id = v_cut.business_id
+    and p.status = 'CONFIRMED'
+    and p.confirmed_at >= v_cut.opened_at
+    and p.confirmed_at < v_executed_at;
+
+  select coalesce(jsonb_object_agg(x.method_code, x.amount), '{}'::jsonb)
+  into v_by_method
+  from (
+    select p.method_code, sum(p.amount) amount
+    from public.payments p
+    where p.business_id = v_cut.business_id
+      and p.status = 'CONFIRMED'
+      and p.confirmed_at >= v_cut.opened_at
+      and p.confirmed_at < v_executed_at
+    group by p.method_code
+  ) x;
+
+  select coalesce(jsonb_agg(
+    jsonb_build_object(
+      'consumption_id', p.consumption_id,
+      'consumption_number', c.consumption_number,
+      'total_paid', p.total_paid
+    )
+    order by c.consumption_number
+  ), '[]'::jsonb)
+  into v_consumptions
+  from (
+    select p.consumption_id, sum(p.amount) total_paid
+    from public.payments p
+    where p.business_id = v_cut.business_id
+      and p.status = 'CONFIRMED'
+      and p.confirmed_at >= v_cut.opened_at
+      and p.confirmed_at < v_executed_at
+    group by p.consumption_id
+  ) p
+  join public.consumptions c
+    on c.id = p.consumption_id
+   and c.business_id = v_cut.business_id;
+
+  v_totals := jsonb_build_object(
+    'total', v_total,
+    'payment_count', v_payment_count,
+    'by_method', v_by_method,
+    'consumptions', v_consumptions
+  );
+
+  v_before := to_jsonb(v_cut);
+
+  update public.cuts
+  set status = 'EXECUTED',
+      executed_at = v_executed_at,
+      executed_by = auth.uid(),
+      totals = v_totals
+  where id = p_cut_id
+  returning * into v_cut;
+
+  perform private.write_audit(
+    v_cut.business_id,
+    'CUT_EXECUTED',
+    'CUT',
+    v_cut.id::text,
+    v_before,
+    to_jsonb(v_cut),
+    null
+  );
+
+  return v_cut;
+end;
+$function$;
