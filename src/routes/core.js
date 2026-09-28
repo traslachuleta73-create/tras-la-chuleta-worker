@@ -349,7 +349,7 @@ export async function createBusinessUser(request, env) {
   const userId = authRecord.id || authRecord.user.id;
   try {
     return await callRpc(request, env, "attach_business_user", {
-      p_user_id: userId, p_display_name: displayName, p_role_code: role,
+      p_user_id: userId, p_email: email, p_display_name: displayName, p_role_code: role,
       p_city: city, p_distinctive: body.distinctive ?? null,
     });
   } catch (error) {
