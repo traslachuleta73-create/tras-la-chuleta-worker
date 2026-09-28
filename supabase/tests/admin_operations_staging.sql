@@ -31,7 +31,7 @@ DECLARE v_admin uuid:=current_setting('test.admin')::uuid;
 BEGIN
   PERFORM set_config('request.jwt.claim.sub',v_admin::text,true);
   BEGIN
-    PERFORM public.attach_business_user(gen_random_uuid(),'Nueva Cocina','COCINA','Nuevo Laredo',NULL);
+    PERFORM public.attach_business_user(gen_random_uuid(),'cocina@prueba.mx','Nueva Cocina','COCINA','Nuevo Laredo',NULL);
     RAISE EXCEPTION 'FAIL_ATTACHED_NONEXISTENT_AUTH_USER';
   EXCEPTION WHEN OTHERS THEN IF SQLERRM<>'AUTH_USER_NOT_FOUND' THEN RAISE; END IF; END;
   v_profile:=public.edit_business_user(v_cashier,'Caja piloto','CAJA','Nuevo Laredo',NULL,'Ajuste de nombre');
@@ -53,7 +53,7 @@ BEGIN
     THEN RAISE EXCEPTION 'FAIL_ADMIN_AUDIT'; END IF;
   PERFORM set_config('request.jwt.claim.sub',v_cashier::text,true);
   BEGIN
-    PERFORM public.attach_business_user(gen_random_uuid(),'Nueva Cocina','COCINA','Nuevo Laredo',NULL);
+    PERFORM public.attach_business_user(gen_random_uuid(),'cocina@prueba.mx','Nueva Cocina','COCINA','Nuevo Laredo',NULL);
     RAISE EXCEPTION 'FAIL_CASHIER_ATTACHED_USER';
   EXCEPTION WHEN OTHERS THEN IF SQLERRM<>'ROLE_NOT_ALLOWED' THEN RAISE; END IF; END;
   BEGIN
