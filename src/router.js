@@ -9,15 +9,15 @@ import {
   closeConsumption,
   cancelConsumption,
   createOrder,
+  validateOrder,
   addOrderItem,
   receiveOrder,
   startPreparation,
-  receivePreparedOrder,
-  markOrderReady,
   listStationOrders,
   listActiveOrders,
   listOperationalCatalog,
   listOpenConsumptions,
+  listRecentConsumptions,
   markStationReady,
   deliverOrder,
   cancelOrder,
@@ -25,6 +25,18 @@ import {
   createPayment,
   confirmPayment,
   listCuts,
+  listAdminOverview,
+  deactivateUser,
+  editUser,
+  createBusinessUser,
+  recordRefund,
+  voidDeliveredOrder,
+  setServiceModeEnabled,
+  updateProductConfig,
+  approveFicha,
+  uploadFicha,
+  fichaDownloadLink,
+  listFichaVersions,
   openCut,
   executeCut,
   setOrderNotificationPreference,
@@ -55,6 +67,22 @@ export async function router(request, env) {
     return withCors(await listCuts(request, env), request, env);
   }
 
+  if (request.method === "GET" && path === "/api/admin/overview") {
+    return withCors(await listAdminOverview(request, env), request, env);
+  }
+
+  if (request.method === "GET" && path === "/api/fichas/download") {
+    return withCors(await fichaDownloadLink(request, env), request, env);
+  }
+
+  if (request.method === "GET" && path === "/api/fichas") {
+    return withCors(await listFichaVersions(request, env), request, env);
+  }
+
+  if (request.method === "POST" && path === "/api/platform/fichas") {
+    return withCors(await uploadFicha(request, env), request, env);
+  }
+
   if (request.method === "GET" && path === "/api/station-orders") {
     return withCors(await listStationOrders(request, env), request, env);
   }
@@ -71,17 +99,20 @@ export async function router(request, env) {
     return withCors(await listOpenConsumptions(request, env), request, env);
   }
 
+  if (request.method === "GET" && path === "/api/consumptions/recent") {
+    return withCors(await listRecentConsumptions(request, env), request, env);
+  }
+
   const routes = {
     "/api/consumptions/open": openConsumption,
     "/api/consumptions/request-close": requestConsumptionClose,
     "/api/consumptions/close": closeConsumption,
     "/api/consumptions/cancel": cancelConsumption,
     "/api/orders": createOrder,
+    "/api/orders/validate": validateOrder,
     "/api/orders/items": addOrderItem,
     "/api/orders/receive": receiveOrder,
     "/api/orders/prepare": startPreparation,
-    "/api/orders/receive-prepared": receivePreparedOrder,
-    "/api/orders/ready": markOrderReady,
     "/api/orders/station-ready": markStationReady,
     "/api/orders/deliver": deliverOrder,
     "/api/orders/cancel": cancelOrder,
@@ -90,6 +121,14 @@ export async function router(request, env) {
     "/api/payments/confirm": confirmPayment,
     "/api/cuts/open": openCut,
     "/api/cuts/execute": executeCut,
+    "/api/admin/users/deactivate": deactivateUser,
+    "/api/admin/users/edit": editUser,
+    "/api/admin/users/create": createBusinessUser,
+    "/api/admin/refunds": recordRefund,
+    "/api/admin/orders/void-delivered": voidDeliveredOrder,
+    "/api/admin/service-modes": setServiceModeEnabled,
+    "/api/admin/products": updateProductConfig,
+    "/api/fichas/approve": approveFicha,
     "/api/orders/notification-preference": setOrderNotificationPreference,
     "/api/print": printDocument,
   };
